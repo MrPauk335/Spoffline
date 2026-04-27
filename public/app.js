@@ -367,6 +367,7 @@ function renderTrackTable() {
       const pathLabel = getPathLabel(track);
       const fileLabel = getFileLabel(track);
 
+      return `
         <tr class="track-row ${isCurrent ? "is-current" : ""}" data-track-id="${track.id}">
           <td class="cell-order">
             <span class="track-index">${index + 1}</span>
