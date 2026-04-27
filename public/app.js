@@ -49,22 +49,6 @@ const dom = {
   playPauseBtn: document.querySelector("#play-pause-btn"),
   nextBtn: document.querySelector("#next-btn"),
   volumeInput: document.querySelector("#volume-input"),
-  matchCurrentBtn: document.querySelector("#match-current-btn"),
-  syncCurrentBtn: document.querySelector("#sync-current-btn"),
-  openCurrentSpotifyBtn: document.querySelector("#open-current-spotify-btn"),
-  spotifyPlayBtn: document.querySelector("#spotify-play-btn"),
-  spotifyStatus: document.querySelector("#spotify-status"),
-  spotifyAvatar: document.querySelector("#spotify-avatar"),
-  spotifyDisplayName: document.querySelector("#spotify-display-name"),
-  spotifyHint: document.querySelector("#spotify-hint"),
-  spotifyAutoSync: document.querySelector("#spotify-auto-sync"),
-  spotifyConnectBtn: document.querySelector("#spotify-connect-btn"),
-  spotifyDisconnectBtn: document.querySelector("#spotify-disconnect-btn"),
-  spotifyConnectBtnPanel: document.querySelector("#spotify-connect-btn-panel"),
-  spotifyDisconnectBtnPanel: document.querySelector("#spotify-disconnect-btn-panel"),
-  spotifyPlaylistState: document.querySelector("#spotify-playlist-state"),
-  fallbackFolderInput: document.querySelector("#fallback-folder-input"),
-  fallbackFileInput: document.querySelector("#fallback-file-input"),
   toast: document.querySelector("#toast")
 };
 
@@ -85,21 +69,10 @@ async function init() {
 function bindUi() {
   dom.searchInput.value = state.searchQuery;
   dom.favoritesOnly.checked = state.favoritesOnly;
-  dom.spotifyAutoSync.checked = state.settings.metadataAutoEnrich;
   dom.volumeInput.value = String(state.volume);
   audio.volume = state.volume;
   dom.volumeInput.style.setProperty("--volume-progress", `${state.volume * 100}%`);
-  dom.spotifyPlayBtn.textContent = "Сбросить данные";
-
-  const noteLead = document.querySelector(".library-note .helper");
-  const noteSub = document.querySelector(".library-note .helper-muted");
   const heroMetaItems = document.querySelectorAll(".hero-meta span");
-  if (noteLead) {
-    noteLead.textContent = "MusicBrainz и Cover Art Archive помогают подтягивать названия, артистов, альбомы и обложки без Spotify Premium.";
-  }
-  if (noteSub) {
-    noteSub.textContent = "Лучше всего работают нормальные имена файлов и встроенные теги в самих аудиофайлах.";
-  }
   if (heroMetaItems[2]) {
     heroMetaItems[2].textContent = "Открытые обложки и релизы";
   }
@@ -124,15 +97,7 @@ function bindUi() {
     renderTrackTable();
   });
 
-  dom.spotifyAutoSync.addEventListener("change", saveSettingsFromForm);
-  dom.spotifyConnectBtn.addEventListener("click", () => {
-    void enrichLibraryMetadata(null, { silent: false, limit: 9999, force: true });
-  });
-  dom.spotifyDisconnectBtn.addEventListener("click", clearLibraryArtwork);
-  dom.spotifyConnectBtnPanel?.addEventListener("click", () => {
-    void enrichLibraryMetadata(null, { silent: false, limit: 9999, force: true });
-  });
-  dom.spotifyDisconnectBtnPanel?.addEventListener("click", clearLibraryArtwork);
+
 
   dom.trackList.addEventListener("click", handleTrackAction);
   dom.queueList.addEventListener("click", handleQueueAction);
@@ -149,12 +114,7 @@ function bindUi() {
     saveState();
   });
 
-  dom.matchCurrentBtn.addEventListener("click", () => withCurrentTrack((trackId) => matchTrackToSpotify(trackId, { silent: false, applyMetadata: true, force: true })));
-  dom.syncCurrentBtn.addEventListener("click", () => {
-    void enrichLibraryMetadata(null, { silent: false, limit: 9999, force: true });
-  });
-  dom.openCurrentSpotifyBtn.addEventListener("click", () => withCurrentTrack(openMatchedTrackInSpotify));
-  dom.spotifyPlayBtn.addEventListener("click", () => withCurrentTrack(clearTrackMetadata));
+
 
   dom.fallbackFolderInput.addEventListener("change", async (event) => {
     const files = Array.from(event.target.files || []);
@@ -276,7 +236,6 @@ function render() {
   renderQueue();
   renderHistory();
   renderPlayer();
-  renderSpotifyPanel();
 }
 
 function renderSummary() {
@@ -364,9 +323,6 @@ function renderTrackTable() {
               <button class="table-btn" data-action="queue" data-track-id="${track.id}">В очередь</button>
               <button class="table-btn ${isFavorite ? "is-favorite" : ""}" data-action="favorite" data-track-id="${track.id}">
                 ${isFavorite ? "В избранном" : "Нравится"}
-              </button>
-              <button class="table-btn" data-action="match" data-track-id="${track.id}">
-                ${match ? "Открыть релиз" : "Найти релиз"}
               </button>
             </div>
           </td>

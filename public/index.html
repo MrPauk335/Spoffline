@@ -107,17 +107,7 @@
             </div>
           </section>
 
-          <section class="library-block library-note">
-            <p class="eyebrow">Open Metadata</p>
-            <p class="helper">
-              Аккаунт можно привязать для поиска совпадений, синка в плейлист
-              активности и запуска найденного трека на Spotify-устройстве.
-            </p>
-            <p class="helper helper-muted">
-              Локальный MP3 нельзя выдать за настоящий статус Spotify
-              “сейчас играет”.
-            </p>
-          </section>
+
         </div>
       </aside>
 
@@ -148,10 +138,6 @@
         </label>
 
         <div class="topbar-user">
-          <div class="user-chip">
-            <span class="user-avatar">S</span>
-            <span>Local mode</span>
-          </div>
         </div>
       </header>
 
@@ -193,14 +179,7 @@
             </label>
           </div>
 
-          <div class="toolbar-actions">
-            <button id="spotify-connect-btn" class="btn btn-ghost">
-              Обновить данные
-            </button>
-            <button id="spotify-disconnect-btn" class="btn btn-ghost">
-              Очистить обложки
-            </button>
-          </div>
+
         </section>
 
         <section class="track-panel">
@@ -249,45 +228,7 @@
           </p>
         </section>
 
-        <section class="sidebar-card spotify-card">
-          <div class="section-head compact">
-            <div>
-              <p class="eyebrow">Open Metadata</p>
-              <h3>Обложки и названия</h3>
-            </div>
-            <span id="spotify-status" class="status-pill online">
-              MusicBrainz
-            </span>
-          </div>
 
-          <div id="spotify-profile" class="spotify-profile">
-            <div id="spotify-avatar" class="spotify-avatar">MB</div>
-            <div>
-              <strong id="spotify-display-name">Открытые музыкальные базы</strong>
-              <p id="spotify-hint" class="helper">
-                Подтягиваем название, исполнителя, альбом и обложку через MusicBrainz и Cover Art Archive.
-              </p>
-            </div>
-          </div>
-
-          <label class="toggle-wrap">
-            <input id="spotify-auto-sync" type="checkbox" />
-            <span>Автообогащение после импорта</span>
-          </label>
-
-          <div class="stack metadata-actions">
-            <button id="spotify-connect-btn-panel" class="btn btn-ghost" type="button">
-              Обновить библиотеку
-            </button>
-            <button id="spotify-disconnect-btn-panel" class="btn btn-ghost" type="button">
-              Очистить только обложки
-            </button>
-          </div>
-
-          <p id="spotify-playlist-state" class="helper">
-            Для лучшего совпадения помогают адекватные названия файлов и теги в самих mp3.
-          </p>
-        </section>
 
         <section class="sidebar-card">
           <div class="section-head compact">
@@ -338,23 +279,7 @@
           <span id="now-time-total">0:00</span>
         </div>
       </div>
-
       <div class="player-tools">
-        <div class="player-actions">
-          <button id="match-current-btn" class="tool-link">
-            Найти данные
-          </button>
-          <button id="sync-current-btn" class="tool-link">
-            Обновить всё
-          </button>
-          <button id="open-current-spotify-btn" class="tool-link">
-            Открыть источник
-          </button>
-          <button id="spotify-play-btn" class="tool-link">
-            Сбросить трек
-          </button>
-        </div>
-
         <label class="volume-wrap">
           <span>Громкость</span>
           <input
