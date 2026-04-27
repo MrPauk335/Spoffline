@@ -1,10 +1,3 @@
-import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
-
-const host = "127.0.0.1";
-const port = Number(process.env.PORT || 4173);
-const root = join(process.cwd(), "public");
 const MUSICBRAINZ_DELAY_MS = 1100;
 const MUSICBRAINZ_USER_AGENT = "Spoffline/1.0 (local metadata proxy)";
 
@@ -24,12 +17,6 @@ const mimeTypes = {
   ".ico": "image/x-icon",
   ".webp": "image/webp"
 };
-
-function safePath(urlPath) {
-  const requested = urlPath === "/" ? "/index.html" : urlPath;
-  const normalized = normalize(requested).replace(/^(\.\.[/\\])+/, "");
-  return join(root, normalized);
-}
 
 function writeJson(res, status, payload) {
   res.writeHead(status, {
@@ -375,44 +362,60 @@ export default {
 };
 
 // Node.js Local Server
-if (typeof process !== "undefined" && process.env) {
-  createServer(async (req, res) => {
-    try {
-      const url = new URL(req.url || "/", `http://${host}:${port}`);
-      if (url.pathname === "/api/metadata/search") {
-        const apiRes = await handleApiRequest(url);
-        res.writeHead(apiRes.status, Object.fromEntries(apiRes.headers.entries()));
-        res.end(await apiRes.text());
-        return;
-      }
+if (typeof process !== "undefined" && process.versions?.node) {
+  (async () => {
+    const { createServer } = await import("node:http");
+    const { readFile } = await import("node:fs/promises");
+    const { extname, join, normalize } = await import("node:path");
 
-      if (url.pathname.startsWith("/api/")) {
-        writeJson(res, 404, { error: "not found" });
-        return;
-      }
+    const host = "127.0.0.1";
+    const port = Number(process.env.PORT || 4173);
+    const root = join(process.cwd(), "public");
 
-      const filePath = safePath(url.pathname);
-      const ext = extname(filePath).toLowerCase();
-      const body = await readFile(filePath);
-      res.writeHead(200, {
-        "Content-Type": mimeTypes[ext] || "application/octet-stream",
-        "Cache-Control": "no-store"
-      });
-      res.end(body);
-    } catch {
+    function safePath(urlPath) {
+      const requested = urlPath === "/" ? "/index.html" : urlPath;
+      const normalized = normalize(requested).replace(/^(\.\.[/\\])+/, "");
+      return join(root, normalized);
+    }
+
+    createServer(async (req, res) => {
       try {
-        const body = await readFile(join(root, "index.html"));
+        const url = new URL(req.url || "/", `http://${host}:${port}`);
+        if (url.pathname === "/api/metadata/search") {
+          const apiRes = await handleApiRequest(url);
+          res.writeHead(apiRes.status, Object.fromEntries(apiRes.headers.entries()));
+          res.end(await apiRes.text());
+          return;
+        }
+
+        if (url.pathname.startsWith("/api/")) {
+          writeJson(res, 404, { error: "not found" });
+          return;
+        }
+
+        const filePath = safePath(url.pathname);
+        const ext = extname(filePath).toLowerCase();
+        const body = await readFile(filePath);
         res.writeHead(200, {
-          "Content-Type": "text/html; charset=utf-8",
+          "Content-Type": mimeTypes[ext] || "application/octet-stream",
           "Cache-Control": "no-store"
         });
         res.end(body);
       } catch {
-        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-        res.end("Not found");
+        try {
+          const body = await readFile(join(root, "index.html"));
+          res.writeHead(200, {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store"
+          });
+          res.end(body);
+        } catch {
+          res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+          res.end("Not found");
+        }
       }
-    }
-  }).listen(port, host, () => {
-    console.log(`Spoffline is live at http://${host}:${port}`);
-  });
+    }).listen(port, host, () => {
+      console.log(`Spoffline is live at http://${host}:${port}`);
+    });
+  })().catch(console.error);
 }
