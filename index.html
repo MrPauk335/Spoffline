@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Spoffline</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-rail">
+          <div class="brand-mark">S</div>
+
+          <button class="rail-btn rail-btn-active" type="button" aria-label="Главная">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 4 5 10v9h5v-5h4v5h5v-9z" />
+            </svg>
+          </button>
+
+          <button class="rail-btn" type="button" aria-label="Поиск">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </button>
+
+          <button class="rail-btn" type="button" aria-label="Медиатека">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 5h2v14H6zM11 5h2v14h-2zM16 5h2v14h-2z" />
+            </svg>
+          </button>
+
+          <div class="rail-spacer"></div>
+
+          <div class="rail-mini-cover">SO</div>
+        </div>
+
+        <div class="library-sidebar">
+          <section class="library-block">
+            <div class="library-head">
+              <div>
+                <p class="eyebrow">Your Library</p>
+                <h1>Spoffline</h1>
+              </div>
+              <span class="mini-badge">Offline</span>
+            </div>
+
+            <div class="collection-pills">
+              <span class="collection-pill active">Плейлисты</span>
+              <span class="collection-pill">Избранное</span>
+              <span class="collection-pill">История</span>
+            </div>
+
+            <div class="action-stack">
+              <button id="add-folder-btn" class="btn btn-solid">
+                Открыть музыку
+              </button>
+              <button id="add-files-btn" class="btn btn-ghost">
+                Добавить файлы
+              </button>
+              <button id="clear-library-btn" class="btn btn-ghost btn-danger">
+                Очистить
+              </button>
+            </div>
+
+            <p class="helper">
+              Поддерживаются MP3, WAV, M4A, FLAC, OGG, AAC и WEBM.
+            </p>
+
+            <div class="library-shortcuts">
+              <article class="shortcut-card shortcut-liked">
+                <div class="shortcut-cover">❤</div>
+                <div class="shortcut-copy">
+                  <strong>Любимые треки</strong>
+                  <span>Быстрый доступ к избранному</span>
+                </div>
+              </article>
+              <article class="shortcut-card shortcut-history">
+                <div class="shortcut-cover">↻</div>
+                <div class="shortcut-copy">
+                  <strong>Недавно слушал</strong>
+                  <span>Последние прослушанные треки</span>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="library-block">
+            <p class="eyebrow">Статистика</p>
+            <div class="stat-list">
+              <div>
+                <span>Треков</span>
+                <strong id="library-count">0</strong>
+              </div>
+              <div>
+                <span>Длительность</span>
+                <strong id="library-duration">0 мин</strong>
+              </div>
+              <div>
+                <span>Избранное</span>
+                <strong id="favorites-count">0</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="library-block library-note">
+            <p class="eyebrow">Open Metadata</p>
+            <p class="helper">
+              Аккаунт можно привязать для поиска совпадений, синка в плейлист
+              активности и запуска найденного трека на Spotify-устройстве.
+            </p>
+            <p class="helper helper-muted">
+              Локальный MP3 нельзя выдать за настоящий статус Spotify
+              “сейчас играет”.
+            </p>
+          </section>
+        </div>
+      </aside>
+
+      <header class="topbar">
+        <div class="topbar-nav">
+          <button class="chrome-btn" type="button" aria-label="Назад">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 6-6 6 6 6" />
+            </svg>
+          </button>
+          <button class="chrome-btn" type="button" aria-label="Вперёд">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </button>
+        </div>
+
+        <label class="search-shell">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="m16 16 4 4" />
+          </svg>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Что хочешь включить?"
+          />
+        </label>
+
+        <div class="topbar-user">
+          <div class="user-chip">
+            <span class="user-avatar">S</span>
+            <span>Local mode</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-panel">
+        <section class="hero-panel">
+          <div class="playlist-art">
+            <div id="playlist-art-grid" class="playlist-art-grid"></div>
+            <span id="playlist-art-fallback">SO</span>
+          </div>
+
+          <div class="hero-copy">
+            <p class="eyebrow">Плейлист</p>
+            <h2 id="hero-title">Spoffline Mix</h2>
+            <p id="hero-subtitle" class="hero-text">
+              Импортируй локальную музыку, собирай свою библиотеку и слушай её
+              оффлайн в аккуратном desktop-плеере.
+            </p>
+
+            <div class="hero-meta">
+              <span>Spoffline</span>
+              <span>Локальная библиотека</span>
+              <span>Оффлайн без подписки</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="toolbar">
+          <div class="toolbar-main">
+            <button id="play-random-btn" class="btn btn-solid btn-play">
+              Слушать
+            </button>
+            <button id="resume-last-btn" class="btn btn-ghost">
+              Последний трек
+            </button>
+            <label class="toggle-chip toggle-chip-check">
+              <input id="favorites-only" type="checkbox" />
+              <span class="toggle-indicator" aria-hidden="true"></span>
+              <span class="toggle-label">Только избранное</span>
+            </label>
+          </div>
+
+          <div class="toolbar-actions">
+            <button id="spotify-connect-btn" class="btn btn-ghost">
+              Обновить данные
+            </button>
+            <button id="spotify-disconnect-btn" class="btn btn-ghost">
+              Очистить обложки
+            </button>
+          </div>
+        </section>
+
+        <section class="track-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Локальная библиотека</p>
+              <h3>Все треки</h3>
+            </div>
+            <p id="filter-summary" class="helper">Пока пусто</p>
+          </div>
+
+          <div class="track-table-wrap">
+            <table class="track-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Название</th>
+                  <th>Исполнитель</th>
+                  <th>Альбом / путь</th>
+                  <th>Время</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody id="track-list"></tbody>
+            </table>
+
+            <div id="empty-state" class="empty-state">
+              <h4>Здесь появится твоя музыка</h4>
+              <p>
+                Открой папку или выбери отдельные файлы, и Spoffline соберёт
+                локальную библиотеку прямо в браузере.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="right-panel">
+        <section class="sidebar-card spotlight-card">
+          <p class="eyebrow">Now Viewing</p>
+          <div class="spotlight-art">SO</div>
+          <strong class="spotlight-title">Spoffline Mix</strong>
+          <p class="helper">
+            Твоя оффлайн-коллекция, очередь и история прослушивания в одном
+            месте.
+          </p>
+        </section>
+
+        <section class="sidebar-card spotify-card">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Open Metadata</p>
+              <h3>Обложки и названия</h3>
+            </div>
+            <span id="spotify-status" class="status-pill online">
+              MusicBrainz
+            </span>
+          </div>
+
+          <div id="spotify-profile" class="spotify-profile">
+            <div id="spotify-avatar" class="spotify-avatar">MB</div>
+            <div>
+              <strong id="spotify-display-name">Открытые музыкальные базы</strong>
+              <p id="spotify-hint" class="helper">
+                Подтягиваем название, исполнителя, альбом и обложку через MusicBrainz и Cover Art Archive.
+              </p>
+            </div>
+          </div>
+
+          <label class="toggle-wrap">
+            <input id="spotify-auto-sync" type="checkbox" />
+            <span>Автообогащение после импорта</span>
+          </label>
+
+          <div class="stack metadata-actions">
+            <button id="spotify-connect-btn-panel" class="btn btn-ghost" type="button">
+              Обновить библиотеку
+            </button>
+            <button id="spotify-disconnect-btn-panel" class="btn btn-ghost" type="button">
+              Очистить только обложки
+            </button>
+          </div>
+
+          <p id="spotify-playlist-state" class="helper">
+            Для лучшего совпадения помогают адекватные названия файлов и теги в самих mp3.
+          </p>
+        </section>
+
+        <section class="sidebar-card">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Очередь</p>
+              <h3>Следом играет</h3>
+            </div>
+            <span id="queue-count" class="mini-badge">0</span>
+          </div>
+          <div id="queue-list" class="queue-list"></div>
+        </section>
+
+        <section class="sidebar-card">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">История</p>
+              <h3>Недавно слушал</h3>
+            </div>
+          </div>
+          <div id="history-list" class="history-list"></div>
+        </section>
+      </aside>
+    </div>
+
+    <section class="player-dock">
+      <div class="player-track">
+        <div id="cover-art" class="cover-art">SO</div>
+        <div class="player-copy">
+          <strong id="now-title">Ничего не играет</strong>
+          <p id="now-artist">Импортируй библиотеку, чтобы начать</p>
+          <span id="now-album" class="helper">Оффлайн режим</span>
+        </div>
+      </div>
+
+      <div class="player-center">
+        <div class="player-controls">
+          <button id="prev-btn" class="icon-btn" aria-label="Предыдущий трек">⏮</button>
+          <button id="play-pause-btn" class="btn btn-solid player-play-btn">
+            ▶
+          </button>
+          <button id="next-btn" class="icon-btn" aria-label="Следующий трек">⏭</button>
+        </div>
+
+        <div class="progress-row">
+          <span id="now-time-current">0:00</span>
+          <input id="progress-input" type="range" min="0" max="1000" value="0" />
+          <span id="now-time-total">0:00</span>
+        </div>
+      </div>
+
+      <div class="player-tools">
+        <div class="player-actions">
+          <button id="match-current-btn" class="tool-link">
+            Найти данные
+          </button>
+          <button id="sync-current-btn" class="tool-link">
+            Обновить всё
+          </button>
+          <button id="open-current-spotify-btn" class="tool-link">
+            Открыть источник
+          </button>
+          <button id="spotify-play-btn" class="tool-link">
+            Сбросить трек
+          </button>
+        </div>
+
+        <label class="volume-wrap">
+          <span>Громкость</span>
+          <input
+            id="volume-input"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.85"
+          />
+        </label>
+      </div>
+    </section>
+
+    <div id="toast" class="toast"></div>
+
+    <input id="fallback-folder-input" type="file" webkitdirectory multiple hidden />
+    <input id="fallback-file-input" type="file" accept="audio/*" multiple hidden />
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
