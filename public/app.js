@@ -48,7 +48,9 @@ const dom = {
   playPauseBtn: document.querySelector("#play-pause-btn"),
   nextBtn: document.querySelector("#next-btn"),
   volumeInput: document.querySelector("#volume-input"),
-  toast: document.querySelector("#toast")
+  toast: document.querySelector("#toast"),
+  fallbackFolderInput: document.querySelector("#fallback-folder-input"),
+  fallbackFileInput: document.querySelector("#fallback-file-input")
 };
 
 const state = loadState();
