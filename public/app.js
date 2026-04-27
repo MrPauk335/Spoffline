@@ -154,7 +154,7 @@ function bindUi() {
     });
 
     document.addEventListener("click", (e) => {
-      if (!libMenu.contains(e.target) && e.target !== libToggle) {
+      if (!libMenu.contains(e.target) && !libToggle.contains(e.target)) {
         if (libMenu.classList.contains("is-visible")) {
           libMenu.classList.remove("is-visible");
         }
