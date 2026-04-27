@@ -201,18 +201,19 @@
 
           <div class="track-table-wrap">
             <table class="track-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Название</th>
-                  <th>Исполнитель</th>
-                  <th>Альбом / путь</th>
-                  <th>Время</th>
-                  <th>Действия</th>
-                </tr>
-              </thead>
-              <tbody id="track-list"></tbody>
-            </table>
+            <thead>
+              <tr>
+                <th class="cell-order">#</th>
+                <th class="cell-main">Название</th>
+                <th class="cell-album">Альбом</th>
+                <th class="cell-heart"></th>
+                <th class="cell-time">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.1.8-1.2-4.5-2.7V7z"/></svg>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="track-list"></tbody>
+          </table>
 
             <div id="empty-state" class="empty-state">
               <h4>Здесь появится твоя музыка</h4>

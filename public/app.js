@@ -62,7 +62,22 @@ async function init() {
   normalizeLibraryRecords();
   bindUi();
   render();
+  void fixMissingDurations();
   void enrichLibraryMetadata(null, { silent: true, limit: 9999 });
+}
+
+async function fixMissingDurations() {
+  const tracksToFix = state.library.filter(t => !t.duration || t.duration === 0);
+  if (!tracksToFix.length) return;
+  
+  for (const track of tracksToFix) {
+    const file = await resolveTrackFile(track);
+    if (file) {
+      void hydrateTrackDuration(track.id, file);
+      // Small delay to avoid blocking
+      await new Promise(r => setTimeout(r, 100));
+    }
+  }
 }
 
 function bindUi() {
@@ -320,35 +335,29 @@ function renderTrackTable() {
       const pathLabel = getPathLabel(track);
       const fileLabel = getFileLabel(track);
 
-      return `
-        <tr class="${isCurrent ? "is-current" : ""}">
-          <td class="cell-order" data-label="#">${index + 1}</td>
-          <td class="cell-track" data-label="Название">
+        <tr class="track-row ${isCurrent ? "is-current" : ""}" data-track-id="${track.id}">
+          <td class="cell-order">
+            <span class="track-index">${index + 1}</span>
+            <button class="row-play-btn" data-action="play">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+          </td>
+          <td class="cell-main">
             <div class="track-main">
-              ${renderArtworkThumb(track, "track-thumb", "♪")}
+              ${renderArtworkThumb(track, "track-thumb", initialsForTrack(track))}
               <div class="track-title">
                 <strong>${escapeHtml(track.title)}</strong>
-                <span class="track-subline">${escapeHtml(fileLabel)}</span>
+                <span class="track-subline">${escapeHtml(artistLabel)}</span>
               </div>
             </div>
           </td>
-          <td class="cell-artist" data-label="Исполнитель">${escapeHtml(artistLabel)}</td>
-          <td class="cell-album" data-label="Альбом / путь">
-            <div class="track-title">
-              <strong>${escapeHtml(albumLabel)}</strong>
-              <span class="track-subline">${escapeHtml(pathLabel)}</span>
-            </div>
+          <td class="cell-album">${escapeHtml(albumLabel || "-")}</td>
+          <td class="cell-heart">
+            <button class="heart-btn-table ${isFavorite ? "is-favorite" : ""}" data-action="favorite" data-track-id="${track.id}">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </button>
           </td>
-          <td class="cell-time" data-label="Время">${formatDuration(track.duration)}</td>
-          <td class="cell-actions" data-label="Действия">
-            <div class="track-actions">
-              <button class="table-btn" data-action="play" data-track-id="${track.id}">Слушать</button>
-              <button class="table-btn" data-action="queue" data-track-id="${track.id}">В очередь</button>
-              <button class="table-btn ${isFavorite ? "is-favorite" : ""}" data-action="favorite" data-track-id="${track.id}">
-                ${isFavorite ? "В избранном" : "Нравится"}
-              </button>
-            </div>
-          </td>
+          <td class="cell-time">${formatDuration(track.duration || 0)}</td>
         </tr>
       `;
     })
@@ -765,55 +774,24 @@ async function hydrateTrackDuration(trackId, file) {
 }
 
 function readAudioDuration(file) {
-  return new Promise((resolve) => {
-    const tempAudio = document.createElement("audio");
-    const objectUrl = URL.createObjectURL(file);
-    tempAudio.preload = "metadata";
-    tempAudio.src = objectUrl;
-
-    const finalize = (value) => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(Number.isFinite(value) ? value : 0);
-    };
-
-    tempAudio.addEventListener("loadedmetadata", () => finalize(tempAudio.duration), {
-      once: true
-    });
-    tempAudio.addEventListener("error", () => finalize(0), { once: true });
-  });
+  return probeDuration(file);
 }
 
 async function handleTrackAction(event) {
-  const button = event.target.closest("button[data-action]");
-  if (!button) {
-    return;
-  }
+  const row = event.target.closest(".track-row");
+  if (!row) return;
 
-  const trackId = button.dataset.trackId;
-  const action = button.dataset.action;
+  const trackId = row.dataset.trackId;
+  const actionBtn = event.target.closest("[data-action]");
+  const action = actionBtn ? actionBtn.dataset.action : "play";
   const filteredIds = getFilteredTracks().map((track) => track.id);
-
-  if (action === "play") {
-    await playTrack(trackId, filteredIds);
-    return;
-  }
-
-  if (action === "queue") {
-    enqueueTrack(trackId);
-    return;
-  }
 
   if (action === "favorite") {
     toggleFavorite(trackId);
-    return;
-  }
-
-  if (action === "match") {
-    if (state.spotifyMatches[trackId]) {
-      await openMatchedTrackInSpotify(trackId);
-      return;
-    }
-    await matchTrackToSpotify(trackId);
+  } else if (action === "play") {
+    await playTrack(trackId, filteredIds);
+  } else if (action === "queue") {
+    enqueueTrack(trackId);
   }
 }
 
@@ -903,6 +881,25 @@ async function playTrack(trackId, contextIds = []) {
   state.queue = state.queue.filter((id) => id !== trackId);
   saveState();
   render();
+}
+
+function probeDuration(file) {
+  return new Promise((resolve) => {
+    const tempAudio = new Audio();
+    const url = URL.createObjectURL(file);
+    tempAudio.src = url;
+    tempAudio.addEventListener("loadedmetadata", () => {
+      const d = tempAudio.duration;
+      URL.revokeObjectURL(url);
+      resolve(d);
+    });
+    tempAudio.addEventListener("error", () => {
+      URL.revokeObjectURL(url);
+      resolve(0);
+    });
+    // Timeout for safety
+    setTimeout(() => resolve(0), 4000);
+  });
 }
 
 async function togglePlayPause() {
