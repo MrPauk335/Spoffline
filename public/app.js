@@ -41,7 +41,6 @@ const dom = {
   coverArt: document.querySelector("#cover-art"),
   nowTitle: document.querySelector("#now-title"),
   nowArtist: document.querySelector("#now-artist"),
-  nowAlbum: document.querySelector("#now-album"),
   nowTimeCurrent: document.querySelector("#now-time-current"),
   nowTimeTotal: document.querySelector("#now-time-total"),
   progressInput: document.querySelector("#progress-input"),
@@ -282,6 +281,13 @@ function renderHeroArtwork() {
 
   dom.playlistArtGrid.classList.add("is-visible");
   dom.playlistArtFallback.hidden = true;
+
+  const mainTrack = artTracks[0];
+  const palette = paletteFromTrack(mainTrack);
+  const heroPanel = document.querySelector(".hero-panel");
+  if (heroPanel && palette) {
+    heroPanel.style.setProperty("--hero-color", palette.main);
+  }
 }
 
 function renderTrackTable() {
@@ -396,7 +402,6 @@ function renderPlayer() {
   if (!track) {
     dom.nowTitle.textContent = "Ничего не играет";
     dom.nowArtist.textContent = "Импортируй библиотеку, чтобы начать";
-    dom.nowAlbum.textContent = "Оффлайн режим";
     dom.coverArt.classList.remove("has-artwork");
     dom.coverArt.style.backgroundImage = "";
     dom.coverArt.textContent = "SO";
@@ -412,7 +417,6 @@ function renderPlayer() {
   const palette = paletteFromTrack(track);
   dom.nowTitle.textContent = track.title;
   dom.nowArtist.textContent = getArtistLabel(track);
-  dom.nowAlbum.textContent = getAlbumLabel(track) || track.relativePath || "Локальный файл";
   applyArtworkToElement(dom.coverArt, track, initialsForTrack(track), palette);
   
   const glowEl = document.querySelector(".player-glow");
