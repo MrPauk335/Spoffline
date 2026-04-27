@@ -237,14 +237,14 @@ body::-webkit-scrollbar-track,
 
 .library-menu {
   position: absolute;
-  top: 70px;
-  left: 20px;
+  top: 100%;
+  right: 0;
   width: 220px;
   background: #282828;
   border-radius: 4px;
   padding: 4px;
   box-shadow: 0 16px 24px rgba(0,0,0,.3), 0 6px 8px rgba(0,0,0,.2);
-  z-index: 1000;
+  z-index: 9999;
   display: none;
   flex-direction: column;
 }
@@ -299,8 +299,9 @@ body::-webkit-scrollbar-track,
 }
 
 .library-head {
+  position: relative;
   display: flex;
-  align-items: start;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 14px;

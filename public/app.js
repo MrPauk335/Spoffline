@@ -59,11 +59,33 @@ queueMicrotask(() => init().catch((error) => {
 }));
 
 async function init() {
+  await restoreFolderHandles();
   normalizeLibraryRecords();
   bindUi();
   render();
   void fixMissingDurations();
   void enrichLibraryMetadata(null, { silent: true, limit: 9999 });
+}
+
+async function restoreFolderHandles() {
+  // We look for any track that was marked as persistent
+  const persistentTracks = state.library.filter(t => t.persistent);
+  if (!persistentTracks.length) return;
+
+  // Try to restore the root handle if we have one
+  const rootHandle = await getHandle("library_root");
+  if (rootHandle) {
+    try {
+      // Browsers often require a user gesture to re-request permission, 
+      // but we can at least try to get the files if permission was already granted.
+      const permission = await rootHandle.queryPermission({ mode: "read" });
+      if (permission === "granted") {
+        await scanFolder(rootHandle, "", { silent: true });
+      }
+    } catch (e) {
+      console.warn("Could not restore folder handle:", e);
+    }
+  }
 }
 
 async function fixMissingDurations() {
@@ -121,14 +143,19 @@ function bindUi() {
   const libToggle = document.querySelector("#lib-add-toggle");
   const libMenu = document.querySelector("#library-menu");
   
-  libToggle?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    libMenu?.classList.toggle("is-visible");
-  });
+  if (libToggle && libMenu) {
+    libToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      libMenu.classList.toggle("is-visible");
+      console.log("Menu toggled", libMenu.classList.contains("is-visible"));
+    });
 
-  document.addEventListener("click", () => {
-    libMenu?.classList.remove("is-visible");
-  });
+    document.addEventListener("click", (e) => {
+      if (!libMenu.contains(e.target) && e.target !== libToggle) {
+        libMenu.classList.remove("is-visible");
+      }
+    });
+  }
 
   libMenu?.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -497,6 +524,7 @@ async function importFromFolder() {
   if ("showDirectoryPicker" in window) {
     try {
       const directoryHandle = await window.showDirectoryPicker();
+      await putHandle("library_root", directoryHandle);
       const entries = [];
       await collectDirectoryFiles(directoryHandle, "", entries);
       await importHandleEntries(entries);
