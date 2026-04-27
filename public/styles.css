@@ -1326,279 +1326,126 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 @media (max-width: 1240px) {
   .app-shell {
-    grid-template-columns: 300px minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
   }
-
-  .topbar {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .main-panel {
-    grid-column: 2;
-    grid-row: 2 / span 2;
-  }
-
+  
   .right-panel {
-    grid-column: 1 / -1;
-    grid-row: 4;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .spotlight-card {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 980px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
-    padding-bottom: calc(var(--player-height) + 160px);
-  }
-
-  .sidebar,
-  .topbar,
-  .main-panel,
-  .right-panel {
-    grid-column: 1;
-  }
-
-  .sidebar {
-    grid-row: 1;
-    grid-template-columns: 64px minmax(0, 1fr);
-  }
-
-  .topbar {
-    grid-row: 2;
-  }
-
-  .main-panel {
-    grid-row: 3;
-  }
-
-  .right-panel {
-    grid-row: 4;
-    grid-template-columns: 1fr;
-  }
-
-  .spotlight-card {
-    grid-column: span 1;
-  }
-
-  .hero-panel {
-    flex-direction: column;
-    align-items: start;
-  }
-
-  .topbar-user {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .toolbar-main,
-  .toolbar-actions {
-    flex-wrap: wrap;
+    display: none; /* Hide on tablets to save space */
   }
 
   .player-dock {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding-bottom: 16px;
-  }
-
-  .player-track,
-  .player-center,
-  .player-tools {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .player-tools {
-    flex-direction: column;
+    grid-template-columns: 240px 1fr 200px;
   }
 }
 
-@media (max-width: 720px) {
-  :root {
-    --player-height: 150px;
-  }
-
+@media (max-width: 900px) {
   .app-shell {
-    padding: 6px;
-    gap: 6px;
-    padding-bottom: calc(var(--player-height) + 120px);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+    padding-bottom: 120px;
   }
 
   .sidebar {
-    grid-template-columns: 1fr;
+    display: none; /* Mobile navigation usually uses a bottom bar or menu */
   }
 
-  .sidebar-rail {
-    flex-direction: row;
-    justify-content: start;
-  }
-
-  .rail-spacer,
-  .rail-mini-cover {
-    display: none;
-  }
-
-  .library-sidebar,
-  .main-panel,
-  .right-panel,
   .topbar {
+    grid-column: 1;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(18, 18, 18, 0.9);
+    backdrop-filter: blur(10px);
+  }
+
+  .main-panel {
+    grid-column: 1;
     padding: 12px;
   }
 
-  .topbar {
-    flex-wrap: wrap;
+  .player-dock {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    grid-template-columns: 1fr auto;
+    padding: 8px 16px;
   }
 
-  .topbar-nav,
-  .topbar-user {
-    width: 100%;
+  .player-tools, .player-center .progress-row {
+    display: none; /* Hide progress bar and volume on small mobile */
   }
 
-  .search-shell {
-    order: 3;
-    max-width: none;
+  .player-center {
+    justify-self: end;
+  }
+
+  .player-controls {
+    gap: 8px;
+  }
+
+  .player-play-btn {
+    min-width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    padding: 0;
   }
 
   .hero-panel {
-    padding: 18px;
-    min-height: auto;
+    flex-direction: row;
+    gap: 16px;
+    padding: 20px;
   }
 
   .playlist-art {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
   }
 
   .hero-panel h2 {
-    font-size: 1.9rem;
-    max-width: none;
+    font-size: 1.5rem;
   }
 
-  .track-panel {
-    padding: 0 0 16px;
+  .hero-meta {
+    display: none;
   }
+}
 
-  .section-head {
-    padding: 0 14px;
-  }
-
+@media (max-width: 600px) {
   .track-table thead {
     display: none;
   }
 
-  .track-table,
-  .track-table tbody,
-  .track-table tr,
-  .track-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .track-table tbody {
-    display: grid;
-    gap: 8px;
-    padding: 0 10px;
-  }
-
-  .track-table tbody tr {
+  .track-table tr {
+    display: flex;
+    flex-direction: column;
     padding: 12px;
-    border-radius: var(--radius-md);
+    margin-bottom: 8px;
     background: var(--surface-soft);
+    border-radius: 12px;
   }
 
   .track-table td {
-    padding: 0;
-    border-bottom: 0;
+    border: 0;
+    padding: 4px 0;
   }
 
-  .track-table td + td {
-    margin-top: 8px;
-  }
-
-  .cell-order {
+  .cell-order, .cell-album, .cell-time {
     display: none;
   }
 
-  .cell-artist::before,
-  .cell-album::before,
-  .cell-time::before,
-  .cell-actions::before {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--text-dim);
-    font-size: 0.74rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    content: attr(data-label);
-  }
-
-  .cell-time {
-    width: auto;
-  }
-
   .cell-actions {
-    min-width: 0;
-  }
-
-  .track-actions {
-    gap: 6px;
-    opacity: 1;
-  }
-
-  .table-btn {
-    width: 100%;
-    justify-content: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .track-main {
-    align-items: start;
+    gap: 12px;
   }
 
-  .player-dock {
-    padding: 12px;
-  }
-
-  .player-track,
-  .player-center,
-  .player-tools {
-    align-items: stretch;
-  }
-
-  .player-controls {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .player-actions {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .tool-link {
-    min-height: 38px;
-    padding: 0 12px;
-    text-align: left;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .volume-wrap {
-    width: 100%;
-    min-width: 0;
+  .track-thumb {
+    width: 48px;
+    height: 48px;
   }
 }
