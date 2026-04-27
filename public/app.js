@@ -50,7 +50,9 @@ const dom = {
   volumeInput: document.querySelector("#volume-input"),
   toast: document.querySelector("#toast"),
   fallbackFolderInput: document.querySelector("#fallback-folder-input"),
-  fallbackFileInput: document.querySelector("#fallback-file-input")
+  fallbackFileInput: document.querySelector("#fallback-file-input"),
+  emptyAddFolderBtn: document.querySelector("#empty-add-folder-btn"),
+  emptyAddFilesBtn: document.querySelector("#empty-add-files-btn")
 };
 
 const state = loadState();
@@ -120,6 +122,10 @@ function bindUi() {
   dom.clearLibraryBtn.addEventListener("click", clearLibrary);
   dom.playRandomBtn.addEventListener("click", playRandomTrack);
   dom.resumeLastBtn.addEventListener("click", resumeLastTrack);
+  
+  if (dom.emptyAddFolderBtn) dom.emptyAddFolderBtn.addEventListener("click", importFromFolder);
+  if (dom.emptyAddFilesBtn) dom.emptyAddFilesBtn.addEventListener("click", importFromFiles);
+
 
   dom.searchInput.addEventListener("input", () => {
     state.searchQuery = dom.searchInput.value.trim();

@@ -223,11 +223,18 @@
           </table>
 
             <div id="empty-state" class="empty-state">
-              <h4>Здесь появится твоя музыка</h4>
+              <div class="empty-icon">
+                <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" style="opacity: 0.2;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/></svg>
+              </div>
+              <h4>Твоя музыка ждет тебя</h4>
               <p>
-                Открой папку или выбери отдельные файлы, и Spoffline соберёт
-                локальную библиотеку прямо в браузере.
+                Spoffline воспроизводит музыку прямо из твоих локальных папок. 
+                Никаких загрузок на сервер — всё остается у тебя.
               </p>
+              <div class="empty-actions">
+                <button id="empty-add-folder-btn" class="btn btn-solid">Открыть папку</button>
+                <button id="empty-add-files-btn" class="btn btn-ghost">Выбрать файлы</button>
+              </div>
             </div>
           </div>
         </section>
