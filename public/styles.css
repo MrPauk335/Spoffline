@@ -2,25 +2,23 @@
   --bg: #000000;
   --surface: #121212;
   --surface-soft: #181818;
-  --surface-strong: #202020;
-  --surface-hover: #252525;
+  --surface-strong: #282828;
+  --surface-hover: #2a2a2a;
   --line: #2a2a2a;
   --text: #ffffff;
   --text-soft: #b3b3b3;
-  --text-dim: #8b8b8b;
-  --green: #1ed760;
-  --green-strong: #1fdf64;
+  --text-dim: #727272;
+  --green: #1db954;
+  --green-strong: #1ed760;
   --danger: #e91429;
-  --shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
-  --radius-xl: 18px;
-  --radius-lg: 12px;
-  --radius-md: 10px;
-  --radius-sm: 8px;
-  --player-height: 92px;
-  --font-body: "Segoe UI Variable Text", "Segoe UI", "Aptos", "Helvetica Neue",
-    Arial, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI Semibold", "Aptos Display",
-    "Trebuchet MS", sans-serif;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --radius-xl: 12px;
+  --radius-lg: 8px;
+  --radius-md: 4px;
+  --radius-sm: 4px;
+  --player-height: 90px;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -108,16 +106,17 @@ body::-webkit-scrollbar-track,
 .right-panel,
 .player-dock {
   background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.sidebar-rail,
-.library-sidebar,
-.topbar,
-.hero-panel,
-.toolbar,
-.track-panel,
-.sidebar-card {
-  border-radius: var(--radius-lg);
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  background: linear-gradient(to bottom, #1f1f1f 0%, var(--surface) 400px);
 }
 
 .sidebar-rail,
@@ -170,18 +169,16 @@ body::-webkit-scrollbar-track,
   padding: 0;
   color: var(--text-soft);
   border: 0;
-  border-radius: 999px;
-  background: #1f1f1f;
-  transition:
-    background 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease;
+  border-radius: 12px;
+  background: transparent;
+  transition: all 0.2s ease;
 }
 
 .rail-btn:hover,
 .rail-btn-active {
   color: var(--text);
-  background: #2b2b2b;
+  background: var(--surface-strong);
+  transform: scale(1.05);
 }
 
 .rail-btn:hover {
@@ -595,13 +592,13 @@ input[type="text"]::placeholder {
 }
 
 .playlist-art {
-  width: 168px;
-  height: 168px;
-  border-radius: 10px;
+  width: 192px;
+  height: 192px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
-  background: #156544;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #282828;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 .playlist-art span,
@@ -897,8 +894,17 @@ input[type="checkbox"] {
 }
 
 .track-row td {
-  padding: 8px 16px;
+  padding: 10px 16px;
   vertical-align: middle;
+  border-bottom: 1px solid transparent;
+}
+
+.track-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.track-row.is-current {
+  background: rgba(29, 185, 84, 0.1);
 }
 
 .cell-order {
@@ -1171,9 +1177,11 @@ input[type="checkbox"] {
   grid-template-columns: 30% 40% 30%;
   align-items: center;
   min-height: 90px;
-  padding: 0 16px;
-  background: #000;
-  border-top: 1px solid #282828;
+  padding: 0 24px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .player-glow {
@@ -1268,32 +1276,44 @@ input[type="checkbox"] {
 
 input[type="range"] {
   -webkit-appearance: none;
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: #4d4d4d;
-  outline: none;
+  background: transparent;
+  cursor: pointer;
+  height: 12px;
 }
 
-input[type="range"]::-webkit-slider-runnable-track {
+/* Track styling */
+input[id="progress-input"]::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, var(--green) var(--progress, 0%), #4d4d4d var(--progress, 0%));
   height: 4px;
   border-radius: 2px;
-  background: linear-gradient(to right, #1db954 var(--progress, 0%), #4d4d4d var(--progress, 0%));
 }
 
+input[id="volume-input"]::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #ffffff var(--volume-progress, 100%), #4d4d4d var(--volume-progress, 100%));
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* Thumb styling */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 12px;
   height: 12px;
+  width: 12px;
+  background: #ffffff;
   border-radius: 50%;
-  background: #fff;
-  margin-top: -4px;
+  margin-top: -4px; /* Centers thumb on track */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   opacity: 0;
   transition: opacity 0.2s;
 }
 
 input[type="range"]:hover::-webkit-slider-thumb {
   opacity: 1;
+}
+
+/* Progress logic via app.js background updates */
+input[type="range"] {
+  --progress: 0%;
 }
 
 .player-tools {
@@ -1320,8 +1340,18 @@ input[type="range"]:hover::-webkit-slider-thumb {
   position: fixed;
   left: 50%;
   bottom: 110px;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(20px);
   z-index: 2000;
+  background: var(--green);
+  color: #000;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .toast.is-visible {
