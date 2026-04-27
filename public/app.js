@@ -146,13 +146,18 @@ function bindUi() {
   if (libToggle && libMenu) {
     libToggle.addEventListener("click", (e) => {
       e.stopPropagation();
-      libMenu.classList.toggle("is-visible");
-      console.log("Menu toggled", libMenu.classList.contains("is-visible"));
+      const isNowVisible = libMenu.classList.toggle("is-visible");
+      console.log("Menu toggled", isNowVisible);
+      if (isNowVisible) {
+        showToast("Меню импорта открыто");
+      }
     });
 
     document.addEventListener("click", (e) => {
       if (!libMenu.contains(e.target) && e.target !== libToggle) {
-        libMenu.classList.remove("is-visible");
+        if (libMenu.classList.contains("is-visible")) {
+          libMenu.classList.remove("is-visible");
+        }
       }
     });
   }

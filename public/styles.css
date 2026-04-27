@@ -149,14 +149,19 @@ body::-webkit-scrollbar-track,
 }
 
 .brand-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: var(--green);
-  color: #000;
-  font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: 800;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
 }
 
 .rail-btn {
@@ -213,11 +218,17 @@ body::-webkit-scrollbar-track,
 .library-actions {
   display: flex;
   gap: 8px;
+  position: relative;
+  z-index: 100;
+}
+
+#lib-add-toggle {
+  z-index: 100;
 }
 
 .icon-btn-small {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -227,7 +238,11 @@ body::-webkit-scrollbar-track,
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s, background 0.2s, transform 0.1s;
+}
+
+.icon-btn-small:active {
+  transform: scale(0.9);
 }
 
 .icon-btn-small:hover {
