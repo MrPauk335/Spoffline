@@ -102,6 +102,23 @@ function bindUi() {
   dom.queueList.addEventListener("click", handleQueueAction);
   dom.historyList.addEventListener("click", handleHistoryAction);
 
+  // Library menu toggle
+  const libToggle = document.querySelector("#lib-add-toggle");
+  const libMenu = document.querySelector("#library-menu");
+  
+  libToggle?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    libMenu?.classList.toggle("is-visible");
+  });
+
+  document.addEventListener("click", () => {
+    libMenu?.classList.remove("is-visible");
+  });
+
+  libMenu?.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+
   dom.playPauseBtn.addEventListener("click", togglePlayPause);
   dom.prevBtn.addEventListener("click", playPreviousTrack);
   dom.nextBtn.addEventListener("click", playNextTrack);
@@ -410,7 +427,7 @@ function renderPlayer() {
     dom.nowTimeCurrent.textContent = "0:00";
     dom.nowTimeTotal.textContent = "0:00";
     dom.progressInput.value = "0";
-    dom.playPauseBtn.textContent = "▶";
+    dom.playPauseBtn.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
     return;
   }
 
@@ -429,7 +446,11 @@ function renderPlayer() {
   const progressValue = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
   dom.progressInput.value = String(progressValue * 10);
   dom.progressInput.style.setProperty("--progress", `${progressValue}%`);
-  dom.playPauseBtn.textContent = audio.paused ? "▶" : "❚❚";
+  
+  const isPlaying = !audio.paused;
+  dom.playPauseBtn.innerHTML = isPlaying 
+    ? `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
 }
 
 

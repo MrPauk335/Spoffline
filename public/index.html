@@ -46,7 +46,27 @@
                 <p class="eyebrow">Your Library</p>
                 <h1>Spoffline</h1>
               </div>
-              <span class="mini-badge">Offline</span>
+              <div class="library-actions">
+                <button id="lib-add-toggle" class="icon-btn-small" title="Добавить музыку">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Hidden actions menu -->
+            <div id="library-menu" class="library-menu">
+              <button id="add-folder-btn" class="menu-item">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+                Открыть папку
+              </button>
+              <button id="add-files-btn" class="menu-item">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 14h-3v3h-2v-3H8v-2h3v-3h2v3h3v2zm-3-7V3.5L18.5 9H13z"/></svg>
+                Добавить файлы
+              </button>
+              <button id="clear-library-btn" class="menu-item menu-item-danger">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                Очистить всё
+              </button>
             </div>
 
             <div class="collection-pills">
@@ -55,20 +75,8 @@
               <span class="collection-pill">История</span>
             </div>
 
-            <div class="action-stack">
-              <button id="add-folder-btn" class="btn btn-solid">
-                Открыть музыку
-              </button>
-              <button id="add-files-btn" class="btn btn-ghost">
-                Добавить файлы
-              </button>
-              <button id="clear-library-btn" class="btn btn-ghost btn-danger">
-                Очистить
-              </button>
-            </div>
-
-            <p class="helper">
-              Поддерживаются MP3, WAV, M4A, FLAC, OGG, AAC и WEBM.
+            <p class="helper helper-small">
+              Поддерживаются MP3, WAV, FLAC, OGG.
             </p>
 
             <div class="library-shortcuts">
@@ -261,18 +269,28 @@
           <strong id="now-title">Ничего не играет</strong>
           <p id="now-artist">Импортируй библиотеку, чтобы начать</p>
         </div>
-        <button class="control-btn" style="font-size: 1rem; margin-left: 8px;">❤</button>
+        <button class="control-btn heart-btn" title="Добавить в любимое">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
       </div>
 
       <div class="player-center">
         <div class="player-controls">
-          <button class="control-btn" title="Перемешать">🔀</button>
-          <button id="prev-btn" class="control-btn" aria-label="Предыдущий трек">⏮</button>
-          <button id="play-pause-btn" class="control-btn player-play-btn">
-            ▶
+          <button class="control-btn" title="Перемешать">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.45 20 9.5V4h-5.5zm.59 10.83l-1.41 1.41 3.13 3.13L14.5 21.5c0 .28.22.5.5.5h5.5v-5.5c0-.28-.22-.5-.5-.5l-2.04 2.04-3.45-3.38z"/></svg>
           </button>
-          <button id="next-btn" class="control-btn" aria-label="Следующий трек">⏭</button>
-          <button class="control-btn" title="Повтор">🔁</button>
+          <button id="prev-btn" class="control-btn" aria-label="Предыдущий трек">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button id="play-pause-btn" class="control-btn player-play-btn">
+            <svg id="play-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button id="next-btn" class="control-btn" aria-label="Следующий трек">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          </button>
+          <button class="control-btn" title="Повтор">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+          </button>
         </div>
 
         <div class="progress-row">
