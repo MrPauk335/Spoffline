@@ -252,16 +252,17 @@ body::-webkit-scrollbar-track,
 
 .library-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
   width: 220px;
   background: #282828;
   border-radius: 4px;
   padding: 4px;
-  box-shadow: 0 16px 24px rgba(0,0,0,.3), 0 6px 8px rgba(0,0,0,.2);
-  z-index: 9999;
+  box-shadow: 0 16px 24px rgba(0,0,0,0.5), 0 6px 8px rgba(0,0,0,0.4);
+  z-index: 10000; /* Extremely high to be above everything */
   display: none;
   flex-direction: column;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .library-menu.is-visible {
@@ -307,6 +308,8 @@ body::-webkit-scrollbar-track,
   border-radius: var(--radius-lg);
   background: var(--surface-soft);
   border: 1px solid rgba(255, 255, 255, 0.04);
+  /* Ensure this container doesn't clip the dropdown menu */
+  overflow: visible !important; 
 }
 
 .library-note {
