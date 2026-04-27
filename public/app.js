@@ -88,6 +88,7 @@ function bindUi() {
   dom.spotifyAutoSync.checked = state.settings.metadataAutoEnrich;
   dom.volumeInput.value = String(state.volume);
   audio.volume = state.volume;
+  dom.volumeInput.style.setProperty("--volume-progress", `${state.volume * 100}%`);
   dom.spotifyPlayBtn.textContent = "Сбросить данные";
 
   const noteLead = document.querySelector(".library-note .helper");
@@ -144,6 +145,7 @@ function bindUi() {
   dom.volumeInput.addEventListener("input", () => {
     state.volume = Number(dom.volumeInput.value);
     audio.volume = state.volume;
+    dom.volumeInput.style.setProperty("--volume-progress", `${state.volume * 100}%`);
     saveState();
   });
 
@@ -456,9 +458,17 @@ function renderPlayer() {
   dom.nowArtist.textContent = getArtistLabel(track);
   dom.nowAlbum.textContent = getAlbumLabel(track) || track.relativePath || "Локальный файл";
   applyArtworkToElement(dom.coverArt, track, initialsForTrack(track), palette);
+  
+  const glowEl = document.querySelector(".player-glow");
+  if (glowEl) {
+    glowEl.style.setProperty("--glow-color", palette ? palette.main : "transparent");
+  }
+
   dom.nowTimeCurrent.textContent = formatDuration(audio.currentTime || 0);
   dom.nowTimeTotal.textContent = formatDuration(audio.duration || track.duration || 0);
-  dom.progressInput.value = audio.duration ? String((audio.currentTime / audio.duration) * 1000) : "0";
+  const progressValue = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+  dom.progressInput.value = String(progressValue * 10);
+  dom.progressInput.style.setProperty("--progress", `${progressValue}%`);
   dom.playPauseBtn.textContent = audio.paused ? "▶" : "❚❚";
 }
 

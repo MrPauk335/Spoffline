@@ -4,7 +4,7 @@ import { extname, join, normalize } from "node:path";
 
 const host = "127.0.0.1";
 const port = Number(process.env.PORT || 4173);
-const root = process.cwd();
+const root = join(process.cwd(), "public");
 const MUSICBRAINZ_DELAY_MS = 1100;
 const MUSICBRAINZ_USER_AGENT = "Spoffline/1.0 (local metadata proxy)";
 
@@ -305,11 +305,13 @@ function buildMatchPayload(recording, artworkUrl) {
   };
 }
 
-async function handleMetadataSearch(url, res) {
+async function handleApiRequest(url) {
   const title = cleanTerm(url.searchParams.get("title"));
   if (!title) {
-    writeJson(res, 400, { error: "title is required" });
-    return;
+    return new Response(JSON.stringify({ error: "title is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
   }
 
   try {
@@ -323,61 +325,94 @@ async function handleMetadataSearch(url, res) {
 
     const recording = await searchMusicBrainz(params);
     if (!recording) {
-      writeJson(res, 404, { match: null });
-      return;
+      return new Response(JSON.stringify({ match: null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json; charset=utf-8" }
+      });
     }
 
     let artworkUrl = "";
     try {
       artworkUrl = await fetchCoverArt(pickPrimaryRelease(recording)?.id || "");
     } catch (err) {
-      console.error("Cover art lookup failed (returning metadata anyway):", err.message);
+      console.error("Cover art lookup failed:", err.message);
     }
 
-    writeJson(res, 200, {
+    return new Response(JSON.stringify({
       match: buildMatchPayload(recording, artworkUrl)
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
     });
   } catch (error) {
     console.error("Search failed:", error);
-    writeJson(res, 502, { error: "metadata lookup failed" });
+    return new Response(JSON.stringify({ error: "metadata lookup failed" }), {
+      status: 502,
+      headers: { "Content-Type": "application/json; charset=utf-8" }
+    });
   }
 }
 
-createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url || "/", `http://${host}:${port}`);
-
+// Cloudflare Worker Handler
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
     if (url.pathname === "/api/metadata/search") {
-      await handleMetadataSearch(url, res);
-      return;
+      return handleApiRequest(url);
     }
-
     if (url.pathname.startsWith("/api/")) {
-      writeJson(res, 404, { error: "not found" });
-      return;
+      return new Response(JSON.stringify({ error: "not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json; charset=utf-8" }
+      });
     }
+    // Static assets fallback (handled by Cloudflare binding)
+    if (env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
+    return new Response("Not found", { status: 404 });
+  }
+};
 
-    const filePath = safePath(url.pathname);
-    const ext = extname(filePath).toLowerCase();
-    const body = await readFile(filePath);
-    res.writeHead(200, {
-      "Content-Type": mimeTypes[ext] || "application/octet-stream",
-      "Cache-Control": "no-store"
-    });
-    res.end(body);
-  } catch {
+// Node.js Local Server
+if (typeof process !== "undefined" && process.env) {
+  createServer(async (req, res) => {
     try {
-      const body = await readFile(join(root, "index.html"));
+      const url = new URL(req.url || "/", `http://${host}:${port}`);
+      if (url.pathname === "/api/metadata/search") {
+        const apiRes = await handleApiRequest(url);
+        res.writeHead(apiRes.status, Object.fromEntries(apiRes.headers.entries()));
+        res.end(await apiRes.text());
+        return;
+      }
+
+      if (url.pathname.startsWith("/api/")) {
+        writeJson(res, 404, { error: "not found" });
+        return;
+      }
+
+      const filePath = safePath(url.pathname);
+      const ext = extname(filePath).toLowerCase();
+      const body = await readFile(filePath);
       res.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8",
+        "Content-Type": mimeTypes[ext] || "application/octet-stream",
         "Cache-Control": "no-store"
       });
       res.end(body);
     } catch {
-      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end("Not found");
+      try {
+        const body = await readFile(join(root, "index.html"));
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store"
+        });
+        res.end(body);
+      } catch {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Not found");
+      }
     }
-  }
-}).listen(port, host, () => {
-  console.log(`Spoffline is live at http://${host}:${port}`);
-});
+  }).listen(port, host, () => {
+    console.log(`Spoffline is live at http://${host}:${port}`);
+  });
+}
