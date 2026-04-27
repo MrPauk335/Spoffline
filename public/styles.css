@@ -1185,7 +1185,7 @@ input[type="checkbox"] {
   bottom: 0;
   z-index: 1000;
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
   min-height: 90px;
   padding: 0 24px;
@@ -1281,11 +1281,16 @@ input[type="checkbox"] {
 .progress-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   width: 100%;
   max-width: 600px;
   font-size: 0.75rem;
   color: #b3b3b3;
+}
+
+.progress-row input[type="range"] {
+  flex: 1;
 }
 
 input[type="range"] {
