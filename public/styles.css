@@ -83,6 +83,10 @@ svg {
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
+#mobile-lib-toggle {
+  display: none;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 332px minmax(0, 1fr) 332px;
@@ -1053,6 +1057,21 @@ input[type="checkbox"] {
   letter-spacing: 1px;
 }
 
+.playlist-mosaic {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+  overflow: hidden;
+  background: #111;
+}
+
+.playlist-mosaic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .library-head {
   display: flex !important;
   justify-content: space-between !important;
@@ -1897,6 +1916,55 @@ input[type="range"] {
   opacity: 0.7;
 }
 
+/* Library Menu */
+.library-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #282828;
+  border-radius: 8px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.5);
+  display: none;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 8px;
+  z-index: 1000;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.library-menu.is-visible {
+  display: flex;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.menu-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.menu-item svg {
+  opacity: 0.7;
+}
+
+.menu-item-danger {
+  color: #ff4d4d;
+}
+
 /* ============================================================
    MOBILE OVERRIDES (MUST BE AT THE END)
    ============================================================ */
@@ -1918,25 +1986,40 @@ input[type="range"] {
   .app-shell {
     display: flex !important;
     flex-direction: column !important;
-    height: 100dvh !important;
+    min-height: 100dvh !important;
+    height: auto !important;
     width: 100vw !important;
     padding: 0 !important;
     gap: 0 !important;
     grid-template-columns: unset !important;
     grid-template-rows: unset !important;
-    overflow: hidden !important;
+    overflow: visible !important;
+    padding-bottom: 120px !important;
   }
 
   /* === HIDE DESKTOP === */
   .sidebar,
   .sidebar-rail,
   .library-sidebar,
-  .right-panel,
   .topbar-nav,
   .topbar-user,
   .player-glow,
   .player-tools {
     display: none !important;
+  }
+
+  /* Right panel styling on mobile (visibility controlled by SPA tab rules) */
+  .right-panel {
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 24px 16px !important;
+    background: transparent !important;
+    border: none !important;
+  }
+  
+  .right-panel .spotlight-card {
+    display: none !important; /* redundant on mobile */
   }
 
   /* === TOP BAR === */
@@ -1949,29 +2032,46 @@ input[type="range"] {
     align-items: center !important;
     width: 100% !important;
     padding: 10px 16px !important;
-    background: #121212 !important;
+    background: rgba(18, 18, 18, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
     border-radius: 0 !important;
     border: none !important;
     box-shadow: none !important;
   }
 
+  .library-menu {
+    position: fixed !important;
+    top: 55px !important;
+    right: 16px !important;
+    min-width: 220px !important;
+  }
+
   .search-shell {
-    width: 100% !important;
+    flex: 1 !important;
+    width: auto !important;
     max-width: none !important;
+  }
+
+  #mobile-lib-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    padding: 8px !important;
+    flex-shrink: 0 !important;
   }
 
   /* === SCROLLABLE CONTENT === */
   .main-panel {
-    flex: 1 1 0 !important;
-    overflow-y: auto !important;
-    overflow-x: visible !important;
+    flex: none !important;
+    overflow: visible !important;
     width: 100% !important;
     padding: 0 !important;
-    padding-bottom: 140px !important;
     margin: 0 !important;
     border-radius: 0 !important;
-    background: #121212 !important;
-    -webkit-overflow-scrolling: touch !important;
+    background: transparent !important;
   }
 
   /* === HERO === */
@@ -2042,37 +2142,7 @@ input[type="range"] {
   }
 
   /* === COLLECTION PILLS — sticky filter strip === */
-  #collection-pills {
-    position: relative !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    padding: 0 16px !important;
-    height: 50px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scrollbar-width: none !important;
-    background: #121212 !important;
-    margin: 0 !important;
-    border-bottom: 1px solid rgba(255,255,255,0.03) !important;
-  }
-
-  .collection-pill {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 32px !important;
-    padding: 0 14px !important;
-    border-radius: 999px !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: var(--text-soft) !important;
-    font-size: 0.82rem !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-  }
-
-  #collection-pills::-webkit-scrollbar {
+  #collection-pills, .collection-pills {
     display: none !important;
   }
 
@@ -2251,7 +2321,7 @@ input[type="range"] {
     z-index: 200 !important;
     display: flex !important;
     align-items: center !important;
-    height: 72px !important; /* Increased from 64px */
+    height: 72px !important;
     padding: 0 16px !important;
     border-radius: 14px !important;
     background: rgba(20, 20, 20, 0.5) !important;
@@ -2262,6 +2332,14 @@ input[type="range"] {
     overflow: visible !important;
     grid-template-columns: unset !important;
     min-height: unset !important;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease !important;
+    transform: translateY(0) !important;
+  }
+
+  .player-dock.player-hidden {
+    transform: translateY(calc(100% + 100px)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 
   /* Colored glow effect from track palette */
@@ -2537,8 +2615,468 @@ input[type="range"] {
     fill: #000 !important;
   }
 }
+/* Library Menu Styles */
+.library-menu {
+  position: absolute;
+  top: 48px;
+  right: 8px;
+  background: #282828;
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: none;
+  flex-direction: column;
+  z-index: 2000;
+  border: 1px solid rgba(255,255,255,0.1);
+}
 
+.library-menu.is-visible {
+  display: flex;
+}
 
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
 
+.menu-item:hover {
+  background: rgba(255,255,255,0.1);
+}
 
+.menu-item svg {
+  color: var(--text-dim);
+  width: 18px;
+  height: 18px;
+}
 
+.menu-item-danger {
+  color: #ff5e5e !important;
+}
+
+.menu-item-danger svg {
+  color: #ff5e5e !important;
+}
+
+/* === MODAL OVERLAY === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-content {
+  background: var(--surface-strong);
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  transform: translateY(0) scale(1);
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.modal-overlay.hidden .modal-content {
+  transform: translateY(20px) scale(0.95);
+}
+
+.modal-content h3 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  margin-bottom: 24px;
+  outline: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.modal-content input:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-actions .btn-secondary {
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.modal-actions .btn-secondary:hover {
+  color: var(--text);
+  transform: none;
+}
+
+.modal-actions .btn-primary {
+  background: var(--green);
+  color: #000;
+  border: none;
+  font-weight: 700;
+}
+
+.modal-actions .btn-primary:hover {
+  background: var(--green-strong);
+}
+
+/* === PLAYLIST PICKER === */
+.playlist-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.playlist-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  width: 100%;
+  text-align: left;
+}
+
+.playlist-picker-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.playlist-picker-item .picker-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--green);
+  color: #000;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.playlist-picker-item .picker-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.playlist-picker-item .picker-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-picker-item .picker-count {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+/* === DRAG HANDLE for playlist detail === */
+.drag-handle {
+  cursor: grab;
+  color: var(--text-dim);
+  touch-action: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.track-row.dragging {
+  opacity: 0.4;
+  background: var(--surface-strong);
+}
+
+.track-row.drag-over {
+  border-top: 2px solid var(--green);
+}
+
+/* Playlist detail header */
+.playlist-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+/* === SELECTION MODE === */
+.selection-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--text-dim);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.track-row.selected {
+  background: rgba(30, 215, 96, 0.1) !important;
+}
+
+.track-row.selected .selection-checkbox {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.track-row.selected .selection-checkbox::after {
+  content: "✓";
+  color: #000;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.bulk-action-bar {
+  position: fixed;
+  bottom: 165px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-strong);
+  padding: 10px 16px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  z-index: 300;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.bulk-action-bar.hidden {
+  bottom: -100px !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+.bulk-action-bar .count-badge {
+  background: var(--green);
+  color: #000;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.bulk-action-bar .btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.05);
+  border: none;
+  border-radius: 15px;
+  color: #fff;
+}
+
+.selection-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-soft);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.selection-toggle-btn.active {
+  background: var(--green);
+  color: #000;
+  border-color: var(--green);
+}
+
+.section-head-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.playlist-detail-header .back-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.playlist-detail-header .back-btn:hover {
+  background: var(--surface-hover);
+}
+
+.playlist-detail-header .pl-detail-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.playlist-detail-header .pl-detail-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.playlist-detail-header .pl-detail-count {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.playlist-detail-header .pl-delete-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.playlist-detail-header .pl-delete-btn:hover {
+  background: rgba(233, 20, 41, 0.15);
+}
+
+/* Mobile adjustments for the menu */
+@media (max-width: 768px) {
+  .library-menu {
+    top: 64px;
+    right: 16px;
+    min-width: 220px;
+  }
+  
+  .menu-item {
+    padding: 16px; /* Larger touch targets for mobile */
+  }
+
+}
+
+/* Mobile History Header - Hidden by default */
+.mobile-history-header {
+  display: none;
+  padding: 24px 20px 16px;
+  background: var(--surface);
+}
+
+.mobile-history-header h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.mobile-history-header p {
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+/* Mobile SPA Tab Visibility */
+@media (max-width: 1100px) {
+  /* Hide artwork on non-tracks tabs */
+  body.active-tab-favorites .playlist-art,
+  body.active-tab-playlists .playlist-art,
+  body.active-tab-history .playlist-art {
+    display: none !important;
+  }
+  
+  .mobile-history-header {
+    display: block;
+  }
+
+  /* Hide right panel on tracks/favorites/playlists tabs */
+  body.active-tab-tracks .right-panel,
+  body.active-tab-favorites .right-panel,
+  body.active-tab-playlists .right-panel {
+    display: none !important;
+  }
+  
+  /* Hide track panel on history tab, show right panel */
+  body.active-tab-history .track-panel,
+  body.active-tab-history .hero-panel {
+    display: none !important;
+  }
+  
+  body.active-tab-history .right-panel {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .cell-actions,
+  .heart-btn-table, 
+  .more-btn {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    display: flex !important;
+  }
+
+  .cell-heart {
+    width: auto !important;
+    padding-right: 12px !important;
+  }
+}

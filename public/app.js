@@ -16,6 +16,8 @@ let playContextIds = [];
 let playbackRecordedTrackId = null;
 let metadataEnrichmentInFlight = false;
 let lastMusicBrainzRequestAt = 0;
+let selectionMode = false;
+let selectedTrackIds = [];
 
 const dom = {};
 
@@ -68,6 +70,14 @@ function populateDom() {
   dom.shortcutHistory = document.querySelector("#shortcut-history");
   dom.heroPlayBtnMobile = document.querySelector("#hero-play-btn-mobile");
   dom.newPlaylistBtn = document.querySelector("#new-playlist-btn");
+  dom.mobileNewPlaylistBtn = document.querySelector("#mobile-new-playlist-btn");
+  dom.scanMobileBtn = document.querySelector("#scan-mobile-btn");
+  dom.selectionModeToggle = document.querySelector("#selection-mode-toggle");
+  dom.bulkActionBar = document.querySelector("#bulk-action-bar");
+  dom.bulkCount = document.querySelector("#bulk-count");
+  dom.bulkAddToPlaylist = document.querySelector("#bulk-add-to-playlist");
+  dom.bulkAddToQueue = document.querySelector("#bulk-add-to-queue");
+  dom.bulkCancel = document.querySelector("#bulk-cancel");
 }
 
 const state = loadState();
@@ -82,6 +92,17 @@ async function init() {
   render();
   void fixMissingDurations();
   void enrichLibraryMetadata(null, { silent: true, limit: 9999 });
+  setupMediaSession();
+
+  // Auto-scan on mobile startup
+  if (window.Capacitor?.isNativePlatform()) {
+    setTimeout(() => {
+      scanMobileMusic().then(() => {
+         // Force enrichment after auto-scan
+         void enrichLibraryMetadata(null, { silent: true, limit: 100 });
+      });
+    }, 1500); // Small delay to let UI settle
+  }
 }
 
 async function restoreFolderHandles() {
@@ -166,28 +187,44 @@ function bindUi() {
   dom.playRandomBtn?.addEventListener("click", playRandomTrack);
   dom.heroPlayBtnMobile?.addEventListener("click", playRandomTrack);
   dom.newPlaylistBtn?.addEventListener("click", createPlaylist);
+  dom.mobileNewPlaylistBtn?.addEventListener("click", () => {
+    createPlaylist();
+    document.querySelector("#library-menu")?.classList.remove("is-visible");
+  });
   dom.resumeLastBtn?.addEventListener("click", resumeLastTrack);
   
   dom.emptyAddFolderBtn?.addEventListener("click", importFromFolder);
   dom.emptyAddFilesBtn?.addEventListener("click", importFromFiles);
+  dom.scanMobileBtn?.addEventListener("click", scanMobileMusic);
+
+  if (window.Capacitor?.getPlatform() === "android") {
+    if (dom.scanMobileBtn) dom.scanMobileBtn.style.display = "flex";
+  }
 
 
   dom.trackList?.addEventListener("click", handleTrackAction);
   dom.queueList?.addEventListener("click", handleQueueAction);
   dom.historyList?.addEventListener("click", handleHistoryAction);
 
-  // Library menu toggle
   const libToggle = document.querySelector("#lib-add-toggle");
+  const mobileLibToggle = document.querySelector("#mobile-lib-toggle");
   const libMenu = document.querySelector("#library-menu");
   
-  if (libToggle && libMenu) {
-    libToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      libMenu.classList.toggle("is-visible");
+  if (window.Capacitor?.isNativePlatform()) {
+    if (mobileLibToggle) mobileLibToggle.style.display = "block";
+  }
+
+  if ((libToggle || mobileLibToggle) && libMenu) {
+    const toggles = [libToggle, mobileLibToggle].filter(Boolean);
+    toggles.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        libMenu.classList.toggle("is-visible");
+      });
     });
 
     document.addEventListener("click", (e) => {
-      if (!libMenu.contains(e.target) && !libToggle.contains(e.target)) {
+      if (!libMenu.contains(e.target) && !toggles.some(btn => btn.contains(e.target))) {
         libMenu.classList.remove("is-visible");
       }
     });
@@ -263,6 +300,7 @@ function bindUi() {
   dom.navForwardBtn?.addEventListener("click", () => navigateHistory(1));
 
   // Bottom Nav Mobile
+  document.body.classList.add("active-tab-tracks");
   const bottomNavItems = document.querySelectorAll(".nav-item");
   bottomNavItems.forEach(item => {
     item.addEventListener("click", () => {
@@ -270,20 +308,96 @@ function bindUi() {
       bottomNavItems.forEach(i => i.classList.remove("active"));
       item.classList.add("active");
       
-      if (tab === "home") {
-        state.searchQuery = "";
+      // Update body class for CSS visibility toggling
+      document.body.classList.remove("active-tab-tracks", "active-tab-favorites", "active-tab-playlists", "active-tab-history");
+      document.body.classList.add(`active-tab-${tab}`);
+      
+      if (tab === "tracks") {
+        state.viewMode = "tracks";
         state.favoritesOnly = false;
         render();
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else if (tab === "search") {
-        dom.searchInput?.focus();
-      } else if (tab === "library") {
-        document.querySelector(".track-panel")?.scrollIntoView({ behavior: "smooth" });
+        window.scrollTo(0, 0);
+      } else if (tab === "favorites") {
+        state.viewMode = "tracks";
+        state.favoritesOnly = true;
+        render();
+        window.scrollTo(0, 0);
+      } else if (tab === "playlists") {
+        state.viewMode = "playlists";
+        render();
+        window.scrollTo(0, 0);
+      } else if (tab === "history") {
+        window.scrollTo(0, 0);
       }
     });
   });
 
+  // Swipe to dismiss mini player
+  const playerDock = document.querySelector(".player-dock");
+  if (playerDock) {
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    playerDock.addEventListener("touchstart", (e) => {
+      // Don't interfere with progress bar
+      if (e.target.closest(".progress-row") || e.target.closest("input")) return;
+      startY = e.touches[0].clientY;
+      isDragging = true;
+      playerDock.style.transition = "none";
+    }, { passive: true });
+
+    playerDock.addEventListener("touchmove", (e) => {
+      if (!isDragging) return;
+      currentY = e.touches[0].clientY;
+      const diff = currentY - startY;
+      if (diff > 0) {
+        playerDock.style.transform = `translateY(${diff}px)`;
+        playerDock.style.opacity = Math.max(0, 1 - diff / 150);
+      }
+    }, { passive: true });
+
+    playerDock.addEventListener("touchend", () => {
+      if (!isDragging) return;
+      isDragging = false;
+      playerDock.style.transition = "";
+      const diff = currentY - startY;
+      if (diff > 60) {
+        playerDock.classList.add("player-hidden");
+        // Show a small "show player" button after hiding
+        setTimeout(() => {
+          showToast("Свайпните вверх по нижней панели, чтобы вернуть плеер");
+        }, 300);
+      } else {
+        playerDock.style.transform = "";
+        playerDock.style.opacity = "";
+      }
+    });
+
+    // Swipe up on bottom nav to restore player
+    const bottomNav = document.querySelector(".bottom-nav");
+    if (bottomNav) {
+      let navStartY = 0;
+      bottomNav.addEventListener("touchstart", (e) => {
+        navStartY = e.touches[0].clientY;
+      }, { passive: true });
+      bottomNav.addEventListener("touchend", (e) => {
+        const diff = navStartY - e.changedTouches[0].clientY;
+        if (diff > 40 && playerDock.classList.contains("player-hidden")) {
+          playerDock.classList.remove("player-hidden");
+          playerDock.style.transform = "";
+          playerDock.style.opacity = "";
+        }
+      });
+    }
+  }
+
   dom.progressInput?.addEventListener("input", seekPlayback);
+
+  dom.selectionModeToggle?.addEventListener("click", toggleSelectionMode);
+  dom.bulkCancel?.addEventListener("click", cancelSelection);
+  dom.bulkAddToQueue?.addEventListener("click", bulkAddToQueue);
+  dom.bulkAddToPlaylist?.addEventListener("click", bulkAddToPlaylist);
 
   dom.fallbackFolderInput?.addEventListener("change", async (event) => {
     const files = Array.from(event.target.files || []);
@@ -308,6 +422,12 @@ function bindUi() {
     }
   });
   audio.addEventListener("ended", playNextTrack);
+  audio.addEventListener("play", () => {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+  });
+  audio.addEventListener("pause", () => {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  });
   audio.addEventListener("loadedmetadata", handleLoadedMetadata);
   audio.addEventListener("play", () => renderPlayer());
   audio.addEventListener("pause", () => renderPlayer());
@@ -434,13 +554,18 @@ function renderSummary() {
     return;
   }
 
-  dom.heroTitle.textContent = state.library.length > 1
-    ? `Моя медиатека`
-    : state.library[0].title;
-  dom.heroSubtitle.textContent =
-    filteredTracks.length === state.library.length
-      ? `В библиотеке уже ${state.library.length} ${pluralizeTracks(state.library.length)}. Выбирай любой трек и слушай музыку полностью локально.`
-      : `Фильтр оставил ${filteredTracks.length} ${pluralizeTracks(filteredTracks.length)} из всей библиотеки.`;
+  if (state.viewMode === "playlists") {
+    dom.heroTitle.textContent = "Плейлисты";
+    dom.heroSubtitle.textContent = "Ваша музыкальная коллекция.";
+  } else if (state.favoritesOnly) {
+    dom.heroTitle.textContent = "Избранное";
+    dom.heroSubtitle.textContent = `Треки, которые вам понравились (${filteredTracks.length}).`;
+  } else {
+    dom.heroTitle.textContent = state.library.length > 1 ? "Все треки" : state.library[0].title;
+    dom.heroSubtitle.textContent = filteredTracks.length === state.library.length
+      ? `В библиотеке уже ${state.library.length} ${pluralizeTracks(state.library.length)}.`
+      : `Отфильтровано ${filteredTracks.length} ${pluralizeTracks(filteredTracks.length)}.`;
+  }
 }
 
 function renderHeroArtwork() {
@@ -481,42 +606,52 @@ function renderTrackTable() {
 
   const filteredTracks = getFilteredTracks();
   const currentTrackId = state.currentTrackId;
+
   dom.trackList.innerHTML = filteredTracks
     .map((track, index) => {
+      const isSelected = selectedTrackIds.includes(track.id);
       const isCurrent = currentTrackId === track.id;
       const isFavorite = state.favorites.includes(track.id);
       const artistLabel = getArtistLabel(track);
       const albumLabel = getAlbumLabel(track);
 
+      const cellOrderContent = selectionMode 
+        ? `<div class="selection-checkbox" data-action="toggle-select"></div>`
+        : `<span class="track-index">${index + 1}</span>
+           <button class="row-play-btn" data-action="play">
+             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+           </button>`;
+
       return `
-        <tr class="track-row ${isCurrent ? "is-current" : ""}" data-track-id="${track.id}">
+        <tr class="track-row ${isCurrent ? "is-current" : ""} ${isSelected ? "selected" : ""}" data-track-id="${track.id}">
           <td class="cell-order">
-            <span class="track-index">${index + 1}</span>
-            <button class="row-play-btn" data-action="play">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            </button>
+            ${cellOrderContent}
           </td>
           <td class="cell-main">
             <div class="track-main">
-              ${renderArtworkThumb(track, "track-thumb", initialsForTrack(track))}
+              <div class="track-thumb">${getTrackArtworkUrl(track) ? `<img src="${getTrackArtworkUrl(track)}" alt="">` : initialsForTrack(track)}</div>
               <div class="track-title">
                 <strong>${escapeHtml(track.title)}</strong>
                 <span class="track-subline">${escapeHtml(artistLabel)}</span>
               </div>
             </div>
           </td>
-          <td class="cell-album">${escapeHtml(albumLabel || "-")}</td>
+          <td class="cell-album">${escapeHtml(albumLabel)}</td>
           <td class="cell-heart">
-            <div class="cell-actions">
-               <button class="heart-btn-table ${isFavorite ? "is-favorite" : ""}" data-action="favorite" data-track-id="${track.id}">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              </button>
-              <button class="more-btn" data-action="add-to-playlist" data-track-id="${track.id}">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-              </button>
+            <button class="control-btn heart-btn ${isFavorite ? "active" : ""}" data-action="favorite">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </button>
+          </td>
+          <td class="cell-time">
+            <div class="cell-time-content">
+              <span>${formatDuration(track.duration)}</span>
+              <div class="row-actions">
+                <button class="table-btn-icon" data-action="add-to-playlist" title="В плейлист">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+              </div>
             </div>
           </td>
-          <td class="cell-time">${formatDuration(track.duration || 0)}</td>
         </tr>
       `;
     })
@@ -553,34 +688,49 @@ function renderTrackTable() {
 function renderPlaylistsGrid() {
   if (!state.playlists.length) {
     dom.trackList.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-soft);">
-      У вас пока нет плейлистов. Создайте первый, нажав на "+" в Медиатеке.
+      У вас пока нет плейлистов. Нажмите на "+" вверху, чтобы создать первый.
     </td></tr>`;
     return;
   }
 
-  dom.trackList.innerHTML = state.playlists.map(pl => `
+  dom.trackList.innerHTML = state.playlists.map(pl => {
+    const covers = pl.trackIds.slice(0, 4).map(id => getTrackById(id)).filter(Boolean).map(t => getTrackArtworkUrl(t)).filter(Boolean);
+    let thumbHtml;
+    if (covers.length >= 4) {
+      thumbHtml = `<div class="track-thumb playlist-mosaic">
+        <img src="${covers[0]}" alt=""><img src="${covers[1]}" alt="">
+        <img src="${covers[2]}" alt=""><img src="${covers[3]}" alt="">
+      </div>`;
+    } else if (covers.length >= 1) {
+      thumbHtml = `<div class="track-thumb"><img src="${covers[0]}" alt=""></div>`;
+    } else {
+      thumbHtml = `<div class="track-thumb playlist-thumb">PL</div>`;
+    }
+    return `
     <tr class="track-row playlist-row" data-playlist-id="${pl.id}">
       <td class="cell-order">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 12h18M3 6h18M3 18h18"/>
         </svg>
       </td>
-      <td class="cell-main">
+      <td class="cell-main" data-action="open-playlist" data-playlist-id="${pl.id}">
         <div class="track-main">
-          <div class="track-thumb playlist-thumb">PL</div>
+          ${thumbHtml}
           <div class="track-title">
             <strong>${escapeHtml(pl.name)}</strong>
             <span class="track-subline">${pl.trackIds.length} треков</span>
           </div>
         </div>
       </td>
-      <td class="cell-album">Персональный плейлист</td>
+      <td class="cell-album"></td>
       <td class="cell-heart">
-        <button class="table-btn" data-action="play-playlist" data-playlist-id="${pl.id}">Слушать</button>
+        <button class="table-btn" data-action="play-playlist" data-playlist-id="${pl.id}" title="Слушать">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
       </td>
       <td class="cell-time"></td>
     </tr>
-  `).join("");
+  `;}).join("");
 
   dom.filterSummary.textContent = `${state.playlists.length} плейлистов создано`;
 }
@@ -1002,6 +1152,7 @@ async function buildTrackRecord(file, options) {
     relativePath: options.relativePath,
     artworkUrl: "",
     persistent: options.persistent,
+    mobilePath: options.mobilePath || null,
     addedAt: Date.now(),
     sourceFingerprint: options.sourceFingerprint
   };
@@ -1041,24 +1192,25 @@ async function handleTrackAction(event) {
   const trackId = row.dataset.trackId;
   const playlistId = row.dataset.playlistId;
   const actionBtn = event.target.closest("[data-action]");
-  const action = actionBtn ? actionBtn.dataset.action : "play";
+  const action = actionBtn ? actionBtn.dataset.action : (selectionMode ? "toggle-select" : "play");
   const filteredIds = getFilteredTracks().map((track) => track.id);
+
+  if (action === "toggle-select") {
+    toggleTrackSelection(trackId);
+    return;
+  }
+  
+  if (selectionMode && action !== "favorite" && action !== "remove-from-playlist") {
+    toggleTrackSelection(trackId);
+    return;
+  }
 
   if (action === "favorite") {
     toggleFavorite(trackId);
   } else if (action === "play") {
     await playTrack(trackId, filteredIds);
   } else if (action === "add-to-playlist") {
-    if (!state.playlists.length) {
-      showToast("Сначала создайте плейлист в Медиатеке.");
-      return;
-    }
-    const names = state.playlists.map((p, i) => `${i+1}. ${p.name}`).join("\n");
-    const choice = window.prompt(`Добавить в плейлист (введите номер):\n${names}`);
-    const index = parseInt(choice) - 1;
-    if (state.playlists[index]) {
-      addTrackToPlaylist(trackId, state.playlists[index].id);
-    }
+    showPlaylistPicker(trackId);
   } else if (action === "play-playlist") {
     const playlist = state.playlists.find(p => p.id === playlistId);
     if (playlist && playlist.trackIds.length) {
@@ -1066,7 +1218,342 @@ async function handleTrackAction(event) {
     } else {
       showToast("В этом плейлисте пока нет треков.");
     }
+  } else if (action === "open-playlist") {
+    openPlaylistDetail(playlistId);
+  } else if (action === "remove-from-playlist") {
+    const plId = actionBtn.dataset.playlistId;
+    removeTrackFromPlaylist(trackId, plId);
   }
+}
+
+function toggleSelectionMode() {
+  selectionMode = !selectionMode;
+  if (!selectionMode) {
+    selectedTrackIds = [];
+  }
+  updateSelectionUi();
+  renderTrackTable();
+}
+
+function toggleTrackSelection(trackId) {
+  const index = selectedTrackIds.indexOf(trackId);
+  if (index === -1) {
+    selectedTrackIds.push(trackId);
+  } else {
+    selectedTrackIds.splice(index, 1);
+  }
+  updateSelectionUi();
+  
+  // Minimal re-render of just this row if possible, but full render is safer for now
+  renderTrackTable();
+}
+
+function updateSelectionUi() {
+  if (dom.selectionModeToggle) {
+    dom.selectionModeToggle.classList.toggle("active", selectionMode);
+    dom.selectionModeToggle.textContent = selectionMode ? "Отмена" : "Выбрать";
+  }
+  
+  if (dom.bulkActionBar) {
+    const hasSelection = selectedTrackIds.length > 0;
+    dom.bulkActionBar.classList.toggle("hidden", !hasSelection);
+    if (dom.bulkCount) dom.bulkCount.textContent = selectedTrackIds.length;
+  }
+}
+
+function cancelSelection() {
+  selectionMode = false;
+  selectedTrackIds = [];
+  updateSelectionUi();
+  renderTrackTable();
+}
+
+function bulkAddToQueue() {
+  if (!selectedTrackIds.length) return;
+  state.queue = [...state.queue, ...selectedTrackIds];
+  saveState();
+  showToast(`Добавлено ${selectedTrackIds.length} треков в очередь`);
+  cancelSelection();
+}
+
+function bulkAddToPlaylist() {
+  if (!selectedTrackIds.length) return;
+  
+  const modal = document.getElementById("playlist-picker-modal");
+  const list = document.getElementById("playlist-picker-list");
+  const cancelBtn = document.getElementById("cancel-picker-btn");
+  if (!modal || !list) return;
+
+  if (!state.playlists.length) {
+    showToast("Сначала создайте плейлист.");
+    return;
+  }
+
+  list.innerHTML = state.playlists.map(pl => `
+    <button class="playlist-picker-item" data-playlist-id="${pl.id}">
+      <div class="picker-icon">PL</div>
+      <div class="picker-info">
+        <span class="picker-name">${escapeHtml(pl.name)}</span>
+        <span class="picker-count">${pl.trackIds.length} треков</span>
+      </div>
+    </button>
+  `).join("");
+
+  modal.classList.remove("hidden");
+
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    list.removeEventListener("click", handlePick);
+    cancelBtn.removeEventListener("click", closeModal);
+  };
+
+  const handlePick = (e) => {
+    const item = e.target.closest(".playlist-picker-item");
+    if (!item) return;
+    
+    const plId = item.dataset.playlistId;
+    const playlist = state.playlists.find(p => p.id === plId);
+    if (playlist) {
+      const newIds = selectedTrackIds.filter(id => !playlist.trackIds.includes(id));
+      playlist.trackIds.push(...newIds);
+      saveState();
+      showToast(`Добавлено ${newIds.length} треков в плейлист "${playlist.name}"`);
+    }
+    
+    closeModal();
+    cancelSelection();
+  };
+
+  list.addEventListener("click", handlePick);
+  cancelBtn.addEventListener("click", closeModal);
+}
+
+function showPlaylistPicker(trackId) {
+  const modal = document.getElementById("playlist-picker-modal");
+  const list = document.getElementById("playlist-picker-list");
+  const cancelBtn = document.getElementById("cancel-picker-btn");
+  if (!modal || !list) return;
+
+  if (!state.playlists.length) {
+    showToast("Сначала создайте плейлист.");
+    return;
+  }
+
+  list.innerHTML = state.playlists.map(pl => `
+    <button class="playlist-picker-item" data-playlist-id="${pl.id}">
+      <div class="picker-icon">PL</div>
+      <div class="picker-info">
+        <span class="picker-name">${escapeHtml(pl.name)}</span>
+        <span class="picker-count">${pl.trackIds.length} треков</span>
+      </div>
+    </button>
+  `).join("");
+
+  modal.classList.remove("hidden");
+
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    list.removeEventListener("click", handlePick);
+    cancelBtn.removeEventListener("click", closeModal);
+  };
+
+  const handlePick = (e) => {
+    const item = e.target.closest(".playlist-picker-item");
+    if (!item) return;
+    addTrackToPlaylist(trackId, item.dataset.playlistId);
+    closeModal();
+  };
+
+  list.addEventListener("click", handlePick);
+  cancelBtn.addEventListener("click", closeModal);
+}
+
+function openPlaylistDetail(playlistId) {
+  const playlist = state.playlists.find(p => p.id === playlistId);
+  if (!playlist) return;
+
+  state.viewMode = "playlist-detail";
+  state.activePlaylistId = playlistId;
+
+  const tracks = playlist.trackIds.map(id => getTrackById(id)).filter(Boolean);
+
+  dom.heroTitle.textContent = playlist.name;
+  dom.heroSubtitle.textContent = `${tracks.length} треков в плейлисте`;
+
+  dom.trackList.innerHTML = "";
+
+  // Header row with back button
+  const headerRow = document.createElement("tr");
+  headerRow.innerHTML = `
+    <td colspan="5">
+      <div class="playlist-detail-header">
+        <button class="back-btn" id="pl-back-btn">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <div class="pl-detail-info">
+          <p class="pl-detail-name">${escapeHtml(playlist.name)}</p>
+          <p class="pl-detail-count">${tracks.length} треков</p>
+        </div>
+        <button class="pl-delete-btn" id="pl-delete-btn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+      </div>
+    </td>
+  `;
+  dom.trackList.appendChild(headerRow);
+
+  if (!tracks.length) {
+    const emptyRow = document.createElement("tr");
+    emptyRow.innerHTML = `<td colspan="5" style="text-align:center; padding: 40px; color: var(--text-soft);">Плейлист пуст. Добавьте треки через кнопку ⋯ рядом с треком.</td>`;
+    dom.trackList.appendChild(emptyRow);
+  } else {
+    tracks.forEach((track, i) => {
+      const artworkUrl = getTrackArtworkUrl(track);
+      const row = document.createElement("tr");
+      row.className = "track-row";
+      row.draggable = true;
+      row.dataset.trackId = track.id;
+      row.dataset.index = i;
+      row.innerHTML = `
+        <td class="cell-order">
+          <span class="drag-handle">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </span>
+        </td>
+        <td class="cell-main">
+          <div class="track-main">
+            <div class="track-thumb">${artworkUrl ? `<img src="${artworkUrl}" alt="">` : "♪"}</div>
+            <div class="track-title">
+              <strong>${escapeHtml(track.title)}</strong>
+              <span class="track-subline">${escapeHtml(track.artist || "Неизвестный")}</span>
+            </div>
+          </div>
+        </td>
+        <td class="cell-album">${escapeHtml(track.album || "")}</td>
+        <td class="cell-heart">
+          <button class="more-btn" data-action="remove-from-playlist" data-track-id="${track.id}" data-playlist-id="${playlist.id}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
+          </button>
+        </td>
+        <td class="cell-time">${track.duration ? formatDuration(track.duration) : ""}</td>
+      `;
+      dom.trackList.appendChild(row);
+    });
+
+    // Setup drag-and-drop
+    setupPlaylistDragDrop(playlist);
+  }
+
+  // Back button
+  document.getElementById("pl-back-btn")?.addEventListener("click", () => {
+    state.viewMode = "playlists";
+    state.activePlaylistId = null;
+    render();
+  });
+
+  // Delete playlist button
+  document.getElementById("pl-delete-btn")?.addEventListener("click", () => {
+    if (confirm(`Удалить плейлист "${playlist.name}"?`)) {
+      state.playlists = state.playlists.filter(p => p.id !== playlist.id);
+      saveState();
+      state.viewMode = "playlists";
+      render();
+      showToast(`Плейлист "${playlist.name}" удалён.`);
+    }
+  });
+}
+
+function removeTrackFromPlaylist(trackId, playlistId) {
+  const playlist = state.playlists.find(p => p.id === playlistId);
+  if (!playlist) return;
+  playlist.trackIds = playlist.trackIds.filter(id => id !== trackId);
+  saveState();
+  openPlaylistDetail(playlistId);
+  showToast("Трек удалён из плейлиста.");
+}
+
+function setupPlaylistDragDrop(playlist) {
+  const rows = dom.trackList.querySelectorAll(".track-row[draggable]");
+  let draggedIndex = null;
+
+  rows.forEach(row => {
+    row.addEventListener("dragstart", (e) => {
+      draggedIndex = parseInt(row.dataset.index);
+      row.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging");
+      rows.forEach(r => r.classList.remove("drag-over"));
+      draggedIndex = null;
+    });
+
+    row.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      rows.forEach(r => r.classList.remove("drag-over"));
+      row.classList.add("drag-over");
+    });
+
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("drag-over");
+    });
+
+    row.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const targetIndex = parseInt(row.dataset.index);
+      if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+      const [moved] = playlist.trackIds.splice(draggedIndex, 1);
+      playlist.trackIds.splice(targetIndex, 0, moved);
+      saveState();
+      openPlaylistDetail(playlist.id);
+    });
+
+    // Touch support
+    let touchStartY = 0;
+    let touchCurrentRow = null;
+
+    const handle = row.querySelector(".drag-handle");
+    if (handle) {
+      handle.addEventListener("touchstart", (e) => {
+        touchStartY = e.touches[0].clientY;
+        draggedIndex = parseInt(row.dataset.index);
+        row.classList.add("dragging");
+      }, { passive: true });
+
+      handle.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetRow = el?.closest(".track-row[draggable]");
+        
+        if (touchCurrentRow !== targetRow) {
+          rows.forEach(r => r.classList.remove("drag-over"));
+          if (targetRow) targetRow.classList.add("drag-over");
+          touchCurrentRow = targetRow;
+        }
+      }, { passive: false });
+
+      handle.addEventListener("touchend", () => {
+        row.classList.remove("dragging");
+        rows.forEach(r => r.classList.remove("drag-over"));
+
+        if (touchCurrentRow && draggedIndex !== null) {
+          const targetIndex = parseInt(touchCurrentRow.dataset.index);
+          if (draggedIndex !== targetIndex) {
+            const [moved] = playlist.trackIds.splice(draggedIndex, 1);
+            playlist.trackIds.splice(targetIndex, 0, moved);
+            saveState();
+            openPlaylistDetail(playlist.id);
+          }
+        }
+        draggedIndex = null;
+        touchCurrentRow = null;
+      });
+    }
+  });
 }
 
 async function handleQueueAction(event) {
@@ -1107,19 +1594,49 @@ function toggleFavorite(trackId) {
 }
 
 function createPlaylist() {
-  const name = window.prompt("Введите название плейлиста:", "Мой плейлист");
-  if (!name || !name.trim()) return;
-
-  const id = "pl_" + Date.now();
-  state.playlists.push({
-    id,
-    name: name.trim(),
-    trackIds: [],
-    createdAt: Date.now()
-  });
-  saveState();
-  render();
-  showToast(`Плейлист "${name}" создан.`);
+  const modal = document.getElementById("custom-prompt-modal");
+  const input = document.getElementById("playlist-name-input");
+  const cancelBtn = document.getElementById("cancel-playlist-btn");
+  const confirmBtn = document.getElementById("confirm-playlist-btn");
+  
+  if (!modal || !input) return;
+  
+  input.value = "";
+  modal.classList.remove("hidden");
+  input.focus();
+  
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    cancelBtn.removeEventListener("click", closeModal);
+    confirmBtn.removeEventListener("click", handleConfirm);
+    input.removeEventListener("keydown", handleKeydown);
+  };
+  
+  const handleConfirm = () => {
+    const name = input.value;
+    if (!name || !name.trim()) return;
+    
+    const id = "pl_" + Date.now();
+    state.playlists.push({
+      id,
+      name: name.trim(),
+      trackIds: [],
+      createdAt: Date.now()
+    });
+    saveState();
+    render();
+    showToast(`Плейлист "${name.trim()}" создан.`);
+    closeModal();
+  };
+  
+  const handleKeydown = (e) => {
+    if (e.key === "Enter") handleConfirm();
+    if (e.key === "Escape") closeModal();
+  };
+  
+  cancelBtn.addEventListener("click", closeModal);
+  confirmBtn.addEventListener("click", handleConfirm);
+  input.addEventListener("keydown", handleKeydown);
 }
 
 function addTrackToPlaylist(trackId, playlistId) {
@@ -1143,6 +1660,21 @@ async function resolveTrackFile(track) {
     return runtimeFiles.get(track.id);
   }
   
+  if (track.mobilePath && window.Capacitor?.isNativePlatform()) {
+    try {
+      const { Filesystem, Directory } = window.Capacitor.Plugins;
+      const fileData = await Filesystem.readFile({
+        path: track.mobilePath,
+        directory: Directory.ExternalStorage
+      });
+      const response = await fetch(`data:audio/mpeg;base64,${fileData.data}`);
+      const blob = await response.blob();
+      return new File([blob], track.fileName, { type: "audio/mpeg" });
+    } catch (e) {
+      console.error("Mobile file resolution failed", e);
+    }
+  }
+
   if (fileCache.has(track.id)) {
     return fileCache.get(track.id);
   }
@@ -1242,6 +1774,7 @@ async function playTrack(trackId, contextIds = []) {
 
   state.queue = state.queue.filter((id) => id !== trackId);
   saveState();
+  void updateMediaSession(track);
   render();
 }
 
@@ -1276,8 +1809,10 @@ async function togglePlayPause() {
 
   if (audio.paused) {
     await audio.play();
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
   } else {
     audio.pause();
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
   }
 }
 
@@ -1877,22 +2412,54 @@ async function fetchOpenMetadata(track) {
     params.set("durationMs", String(Math.round(track.duration * 1000)));
   }
 
-  const response = await fetch(`/api/metadata/search?${params.toString()}`, {
-    headers: {
-      Accept: "application/json"
-    }
-  });
+  try {
+    const response = await fetch(`/api/metadata/search?${params.toString()}`, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
 
-  const payload = await response.json().catch(() => ({}));
-  if (response.status === 404) {
+    if (response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      return payload.match || null;
+    }
+  } catch (e) {
+    console.warn("Server metadata API not available, trying direct MB lookup...", e);
+  }
+
+  // Client-side fallback for Android/Capacitor where /api/ is not available
+  try {
+    const mbUrl = `https://musicbrainz.org/ws/2/recording?fmt=json&limit=5&query=recording:${encodeURIComponent(`"${params.get("title")}"`)}${params.get("artist") ? ` AND artist:${encodeURIComponent(`"${params.get("artist")}"`)}` : ""}`;
+    const mbRes = await fetch(mbUrl, { headers: { 'User-Agent': 'Spoffline/1.0 (Mobile Client)' } });
+    if (!mbRes.ok) return null;
+    const mbData = await mbRes.json();
+    const recording = mbData.recordings?.[0];
+    if (!recording) return null;
+
+    const relId = recording.releases?.[0]?.id;
+    let artworkUrl = "";
+    if (relId) {
+       try {
+         const caRes = await fetch(`https://coverartarchive.org/release/${relId}`);
+         if (caRes.ok) {
+           const caData = await caRes.json();
+           artworkUrl = caData.images?.[0]?.thumbnails?.large || caData.images?.[0]?.image || "";
+         }
+       } catch(e) {}
+    }
+
+    return {
+      source: "musicbrainz-direct",
+      title: recording.title,
+      artist: recording['artist-credit']?.[0]?.name || "",
+      album: recording.releases?.[0]?.title || "",
+      artworkUrl,
+      matchedAt: Date.now()
+    };
+  } catch (err) {
+    console.error("Direct MB lookup failed:", err);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error(payload.error || "Metadata request failed.");
-  }
-
-  return payload.match || null;
 }
 
 async function matchTrackToSpotify(trackId, options = {}) {
@@ -2534,4 +3101,126 @@ if ('serviceWorker' in navigator) {
       .then((reg) => console.log('[SW] Registered', reg))
       .catch((err) => console.error('[SW] Registration failed', err));
   });
+}
+
+
+function setupMediaSession() {
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.setActionHandler('play', async () => {
+      await audio.play();
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      audio.pause();
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', async () => {
+      await playPreviousTrack();
+    });
+    navigator.mediaSession.setActionHandler('nexttrack', async () => {
+      await playNextTrack();
+    });
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (details.seekTime !== undefined && details.seekTime !== null) {
+        audio.currentTime = details.seekTime;
+      }
+    });
+  }
+}
+
+function updateMediaSession(track) {
+  if (!('mediaSession' in navigator) || !track) return;
+
+  const artworkUrl = getTrackArtworkUrl(track);
+  const artwork = artworkUrl ? [
+    { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }
+  ] : [];
+
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.title || 'Unknown Title',
+    artist: track.artist || 'Unknown Artist',
+    album: track.album || 'Unknown Album',
+    artwork: artwork
+  });
+  
+  navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+}
+
+async function scanMobileMusic() {
+  if (!window.Capacitor?.isNativePlatform()) return;
+
+  const { Filesystem, Directory } = window.Capacitor.Plugins;
+  try {
+    let status = await Filesystem.checkPermissions();
+    if (status.publicStorage !== "granted") {
+      status = await Filesystem.requestPermissions();
+    }
+
+    if (status.publicStorage !== "granted") {
+      showToast("Доступ к файлам запрещен. Пожалуйста, разрешите доступ в настройках приложения.", 5000);
+      return;
+    }
+
+    showToast("Ищу музыку во всех папках... это может занять время");
+    
+    const rootFolders = ["Music", "Download", "Documents"];
+    const foundPaths = [];
+
+    // Recursive helper
+    async function walk(path) {
+      try {
+        const result = await Filesystem.readdir({
+          path: path,
+          directory: Directory.ExternalStorage
+        });
+        for (const file of result.files) {
+          const fullPath = path ? `${path}/${file.name}` : file.name;
+          if (file.type === "directory") {
+            await walk(fullPath);
+          } else if (isAudioFile(file.name)) {
+            foundPaths.push(fullPath);
+          }
+        }
+      } catch (e) {
+        // Skip folders we can't access
+      }
+    }
+
+    for (const folder of rootFolders) {
+      await walk(folder);
+    }
+
+    const knownFingerprints = new Set(state.library.map(t => t.sourceFingerprint));
+    const freshTracks = [];
+
+    for (const fullPath of foundPaths) {
+      const fileName = fullPath.split("/").pop();
+      const fingerprint = `mobile_${fullPath}`;
+      
+      if (knownFingerprints.has(fingerprint)) continue;
+
+      const mockFile = { name: fileName };
+      const track = await buildTrackRecord(mockFile, {
+        relativePath: fullPath,
+        sourceFingerprint: fingerprint,
+        persistent: true,
+        mobilePath: fullPath
+      });
+
+      freshTracks.push(track);
+      knownFingerprints.add(fingerprint);
+    }
+
+    if (freshTracks.length > 0) {
+      state.library = [...state.library, ...freshTracks].sort(sortTracks);
+      saveState();
+      render();
+      showToast(`Найдено ${freshTracks.length} новых треков!`);
+      // Start enriching metadata for new tracks
+      void enrichLibraryMetadata(freshTracks.map(t => t.id), { silent: true, limit: 100 });
+    } else {
+      showToast("Новых треков не найдено.");
+    }
+  } catch (e) {
+    console.error("Scan error", e);
+    showToast("Ошибка при сканировании");
+  }
 }

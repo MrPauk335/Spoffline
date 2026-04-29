@@ -33,6 +33,7 @@
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
-    "@capacitor/android": "^8.3.1"
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/filesystem": "^8.1.2"
   }
 }
