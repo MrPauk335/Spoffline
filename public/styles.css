@@ -35,7 +35,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  overflow-x: hidden;
+  overflow: hidden !important;
 }
 
 button,
@@ -57,7 +57,10 @@ svg {
   stroke-linejoin: round;
 }
 
-body::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+}
+
 .track-table-wrap::-webkit-scrollbar {
   width: 12px;
   height: 12px;
@@ -79,7 +82,8 @@ body::-webkit-scrollbar-track,
   grid-template-columns: 332px minmax(0, 1fr) 332px;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
-  min-height: calc(100vh - var(--player-height));
+  height: 100vh !important;
+  overflow: hidden !important;
   padding: 8px;
   padding-bottom: calc(var(--player-height) + 12px);
 }
@@ -573,7 +577,8 @@ input[type="text"]::placeholder {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .hero-panel {

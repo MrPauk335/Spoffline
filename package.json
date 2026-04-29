@@ -3,8 +3,36 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "main": "main.js",
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "electron:start": "electron .",
+    "electron:build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.spoffline.app",
+    "productName": "Spoffline",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "public/**/*",
+      "main.js",
+      "package.json"
+    ],
+    "win": {
+      "icon": "public/256x256.png",
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.2",
+    "@capacitor/core": "^8.3.1",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.3.1"
   }
 }
