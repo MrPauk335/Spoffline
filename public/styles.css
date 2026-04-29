@@ -35,7 +35,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  overflow: hidden !important;
+  overflow-x: hidden;
 }
 
 button,
@@ -57,24 +57,21 @@ svg {
   stroke-linejoin: round;
 }
 
-body::-webkit-scrollbar {
+body::-webkit-scrollbar,
+.track-table-wrap::-webkit-scrollbar,
+.main-panel::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.library-sidebar::-webkit-scrollbar {
   display: none !important;
 }
 
-.track-table-wrap::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-body::-webkit-scrollbar-thumb,
-.track-table-wrap::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
-  border-radius: 999px;
-}
-
-body::-webkit-scrollbar-track,
-.track-table-wrap::-webkit-scrollbar-track {
-  background: transparent;
+body,
+.track-table-wrap,
+.main-panel,
+.sidebar,
+.library-sidebar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 .app-shell {
@@ -82,8 +79,7 @@ body::-webkit-scrollbar-track,
   grid-template-columns: 332px minmax(0, 1fr) 332px;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
-  height: 100vh !important;
-  overflow: hidden !important;
+  min-height: calc(100vh - var(--player-height));
   padding: 8px;
   padding-bottom: calc(var(--player-height) + 12px);
 }
@@ -577,8 +573,7 @@ input[type="text"]::placeholder {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .hero-panel {
