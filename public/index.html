@@ -49,13 +49,19 @@
         <div class="library-sidebar">
           <section class="library-block">
             <div class="library-head">
-              <div>
-                <p class="eyebrow">Your Library</p>
-                <h1>Spoffline</h1>
+              <div class="library-label">
+                <h1>Медиатека</h1>
               </div>
               <div class="library-actions">
-                <button id="lib-add-toggle" class="icon-btn-small" title="Добавить музыку">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
+                <button id="new-playlist-btn" class="icon-btn" title="Создать плейлист">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M3 12h10M3 18h10M15 15h6M18 12v6"/>
+                  </svg>
+                </button>
+                <button id="lib-add-toggle" class="icon-btn" title="Добавить музыку">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
                 </button>
                 
                 <!-- Hidden actions menu -->
@@ -128,12 +134,12 @@
 
       <header class="topbar">
         <div class="topbar-nav">
-          <button class="chrome-btn" type="button" aria-label="Назад">
+          <button id="nav-back-btn" class="chrome-btn" type="button" aria-label="Назад">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m15 6-6 6 6 6" />
             </svg>
           </button>
-          <button class="chrome-btn" type="button" aria-label="Вперёд">
+          <button id="nav-forward-btn" class="chrome-btn" type="button" aria-label="Вперёд">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m9 6 6 6-6 6" />
             </svg>
@@ -176,6 +182,10 @@
               <span>Локальная библиотека</span>
               <span>Оффлайн без подписки</span>
             </div>
+
+            <button id="hero-play-btn-mobile" class="hero-play-btn-mobile" title="Слушать всё">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
           </div>
         </section>
 
@@ -193,9 +203,14 @@
               <span class="toggle-label">Только избранное</span>
             </label>
           </div>
-
-
         </section>
+
+        <div id="collection-pills" class="collection-pills">
+          <button class="collection-pill active" data-filter="all">Всё</button>
+          <button class="collection-pill" data-filter="favorites">Любимое</button>
+          <button class="collection-pill" data-filter="playlists">Плейлисты</button>
+          <button class="collection-pill" data-filter="history">История</button>
+        </div>
 
         <section class="track-panel">
           <div class="section-head">
@@ -284,14 +299,14 @@
           <strong id="now-title">Ничего не играет</strong>
           <p id="now-artist">Импортируй библиотеку, чтобы начать</p>
         </div>
-        <button class="control-btn heart-btn" title="Добавить в любимое">
+        <button id="player-heart-btn" class="control-btn heart-btn" title="Добавить в любимое">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         </button>
       </div>
 
       <div class="player-center">
         <div class="player-controls">
-          <button class="control-btn" title="Перемешать">
+          <button id="shuffle-btn" class="control-btn" title="Перемешать">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.45 20 9.5V4h-5.5zm.59 10.83l-1.41 1.41 3.13 3.13L14.5 21.5c0 .28.22.5.5.5h5.5v-5.5c0-.28-.22-.5-.5-.5l-2.04 2.04-3.45-3.38z"/></svg>
           </button>
           <button id="prev-btn" class="control-btn" aria-label="Предыдущий трек">
@@ -303,7 +318,7 @@
           <button id="next-btn" class="control-btn" aria-label="Следующий трек">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
           </button>
-          <button class="control-btn" title="Повтор">
+          <button id="repeat-btn" class="control-btn" title="Повтор">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
           </button>
         </div>
@@ -333,6 +348,21 @@
 
     <input id="fallback-folder-input" type="file" webkitdirectory multiple hidden />
     <input id="fallback-file-input" type="file" accept="audio/*" multiple hidden />
+
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Главная</span>
+      </button>
+      <button class="nav-item" data-tab="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Поиск</span>
+      </button>
+      <button class="nav-item" data-tab="library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+        <span>Медиатека</span>
+      </button>
+    </nav>
 
     <script type="module" src="./app.js"></script>
   </body>
