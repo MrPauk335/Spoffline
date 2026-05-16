@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Spoffline</string>
-    <string name="title_activity_main">Spoffline</string>
-    <string name="package_name">com.spoffline.app</string>
-    <string name="custom_url_scheme">com.spoffline.app</string>
-</resources>
